@@ -81,7 +81,7 @@ def _store_range_int(obj, key, range_str):
     ''' store range (list) of ints as an attribute '''
     attrname = key.replace('_irange', '')
     first, last, inc, default = map(int, re.split(r'[\s,]+', range_str))
-    values = range(first, last, inc)
+    values = range(first, last+1, inc)
     setattr(obj, attrname, values)
     setattr(obj, '{}_default'.format(attrname), default)
 
