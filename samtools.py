@@ -45,6 +45,7 @@ def get_amplicon_fn(opts, samfile):
 def get_seq(fasta_fn, start, end):
     '''
     Extract a length of sequence from a .fasta file, using seek() and read() for speed.
+    Assumes that there is only a single sequence in the .fasta file.
     '''
     if start > end:
         raise ValueError(start, end)
@@ -119,3 +120,11 @@ if __name__ == '__main__':
             print 'seq1: {}..{}'.format(seq1[:10], seq1[-10:])
             print 'seq2: {}..{}'.format(seq2[:10], seq2[-10:])
             assert seq1 == seq2
+
+    def test_ingest_amplicon():
+        amplicon_fn = 'sequences/amplicon3_exons.fasta'
+        amplicon = ingest_amplicon(amplicon_fn)
+        from strings import ppjson
+        print ppjson(amplicon)
+
+    test_ingest_amplicon()
