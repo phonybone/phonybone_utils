@@ -5,7 +5,7 @@ def hashslice(d, *keys):
     return [d[k] for k in keys]
 
 def hashtuple(d, *keys):
-    return tuple(hashslice(*keys))
+    return tuple(hashslice(d, *keys))
 
 def to_dict(config, section):
     ''' return the section of config as a dict '''
