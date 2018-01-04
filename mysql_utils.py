@@ -1,12 +1,12 @@
 import sys
 import os
 import copy
+import datetime
 import mysql.connector
 from contextlib import contextmanager
 import ConfigParser
 import sqlalchemy as sa
 from mysql.connector.errors import Error as _MysqlError
-from everest_core import log
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
@@ -41,6 +41,65 @@ def get_mysql_cmdline(opts):
     if opts.d:
         print 'mysql connection: {}'.format(conn_args)
     return mysql.connector.connect(**conn_args)
+    
+def get_field_info(dbh, tablename):
+    '''
+    Populate various cls members with information about the fields of the corresponding
+    database table.
+
+    Returns:
+    - obj_fields gets a list of the columns in the table
+    - column_info get a dict keyed on column name; holds col_type, null_ok, key, default, extra, an py_type
+    - primary_key gets the name of the primary key of the table (fixme: support for multiple-column primary keys?)
+    '''
+    # get all the field names from the table:
+
+    with get_cursor(dbh) as cursor:
+        cursor.execute("SHOW COLUMNS FROM {}.{}".format(dbh.database, tablename))
+        obj_fields = []    # contains list of field names
+        column_info = {}   # contains dict of field info as derived from "SHOW COLUMNS"
+        primary_key = None
+        for row in cursor:
+            col_name, col_type, null_ok, key, default, extra = row
+            obj_fields.append(col_name)
+            py_type = _mysql_t2t(col_type)
+            if py_type is datetime.datetime:
+                py_type = str # see hack in parse_args() below
+            column_info[col_name] = {
+                'col_type': col_type,
+                'null_ok': null_ok,
+                'key': key,
+                'default': default,
+                'extra': extra,
+                'py_type': py_type,
+                }
+            if 'PRI' in key:
+                primary_key = col_name
+
+        obj_fields.sort()
+        return obj_fields, column_info, primary_key
+
+def _mysql_t2t(mytype):
+    ''' take a mysql type as returned by "show columns from <tablename>" and return a python type '''
+    mytype = mytype.lower()
+    if 'bit' in mytype or 'bool' in mytype:
+        return bool
+    elif 'int' in mytype or 'integer' in mytype or 'dec' in mytype:
+        return int
+    elif 'float' in mytype or 'double' in mytype:
+        return float
+    elif  'datetime' in mytype:
+        return datetime.datetime
+    elif 'date' in mytype:
+        return datetime.date
+    elif 'timestamp' in mytype:
+        return str
+    elif 'time' in mytype:
+        return datetime.time
+    elif 'char' in mytype or 'text' in mytype:
+        return str
+    else:
+        raise ValueError("unknown mysql type '{}'".format(mytype))
     
         
 @contextmanager
@@ -84,7 +143,6 @@ def save_obj(dbh, record, tablename, primary_key=None, debug=False):
             return cursor.lastrowid
         except _MysqlError as e:
             # when primary key was provided?
-            log.exception(e)
             return None
 
 
