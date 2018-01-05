@@ -37,8 +37,9 @@ def expand_range_list(src):
 def chunks(s, ll):
     '''
     Given a string s, return a list of string of max length ll.
-    The final string in this list will contain the remainder of
-    s.
+    The final string in this list will contain the remainder of s.
+
+    Example: chucks('abcdefghijkl', 5) returns ['abcde', 'fghij', 'kl']
     '''
     i, j = 0, ll
     chunks = []
@@ -70,3 +71,4 @@ def qw(s):
     if s == '':
         return []
     return s.split(' ')
+
