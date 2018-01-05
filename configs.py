@@ -100,3 +100,12 @@ def _store_range_float(obj, key, range_str):
     setattr(obj, attrname, values)
     setattr(obj, '{}_default'.format(attrname), default)
 #-----------------------------------------------------------------------
+
+
+def to_bool(value):
+    ''' return a truthi interpretation of value, including "false" and "FalSe" as False '''
+    if type(value) is bool:
+        return value
+    if re.match(r'false', value, re.I):
+        return False
+    return bool(value)
