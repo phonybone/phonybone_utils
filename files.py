@@ -24,6 +24,11 @@ def get_size(path, units='auto'):
             
     return '{}{}'.format(size, units.capitalize())
 
+def get_timestamp(path):
+    ''' return the file modification time '''
+    ts = os.path.getmtime(path)
+    return time.strftime('%Y-%m-%d %H:%M', time.gmtime(ts))
+
 def replace_ext(path, new_ext):
     ''' 
     replace the extension on a path with a new extension.  Replacement occurs
