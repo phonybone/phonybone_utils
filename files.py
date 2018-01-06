@@ -1,5 +1,6 @@
 import os
 from collections import OrderedDict
+import pkg_resources as pr
 
 def get_size(path, units='auto'):
     ''' Return a user-friendly, auto-scaled string representation of the size of a file. '''
@@ -37,6 +38,8 @@ def replace_ext(path, new_ext):
     head, tail = os.path.splitext(path)
     return head + '.' + new_ext
 
+def package_fileres(pack, fn):
+    return pr.resource_filename(pack, fn)
 
 if __name__=='__main__':
     path = '/usr/local/everest/data/var/UserData/Victor/Reads/LB5025/LB5025germline_PG0-718_LB4852V_rename.fastq'

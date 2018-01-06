@@ -66,7 +66,7 @@ def load_attributes_from_config(obj, config, section):
         elif key.endswith('_frange'):
             _store_range_float(obj, key, values)
         else:
-            setattr(obj, key, value)
+            setattr(obj, key, values)
 
 
 def _store_values(obj, key, values_str, typ):
