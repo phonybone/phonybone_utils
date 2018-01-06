@@ -62,7 +62,7 @@ def get_field_info(dbh, tablename):
         for row in cursor:
             col_name, col_type, null_ok, key, default, extra = row
             obj_fields.append(col_name)
-            py_type = _mysql_t2t(col_type)
+            py_type = mysql_t2t(col_type)
             if py_type is datetime.datetime:
                 py_type = str # see hack in parse_args() below
             column_info[col_name] = {
@@ -79,7 +79,7 @@ def get_field_info(dbh, tablename):
         obj_fields.sort()
         return obj_fields, column_info, primary_key
 
-def _mysql_t2t(mytype):
+def mysql_t2t(mytype):
     ''' take a mysql type as returned by "show columns from <tablename>" and return a python type '''
     mytype = mytype.lower()
     if 'bit' in mytype or 'bool' in mytype:
