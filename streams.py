@@ -1,5 +1,7 @@
 import sys, os
 from contextlib import contextmanager
+import subprocess
+
 
 @contextmanager
 def get_output_stream(filename, mode='w', verbose_stream=None):
@@ -46,3 +48,49 @@ def get_root(path):
     ''' return the basename of a file path, with extension stripped '''
     fn = os.path.basename(path)
     return os.path.splitext(fn)[0]
+
+def do_pipe(cmds):
+    '''
+    Run a set of piped commands.  
+
+    cmds is a list of lists; each element is a cmd as may be fed to subprocess.Popen.
+
+    Return the set of pipe objects created and the final output.
+
+    Attempts to handle input redirection for the first command and
+      output redirection for the last command.  Whitespace required 
+      between '>' and filename, '<' and filename.
+
+    Pretty primitive; caller beware.
+    '''
+    cmd0 = cmds.pop(0)
+    if '<' in cmd0:
+        idx = cmd0.index('<')
+        src = cmd0.pop(idx+1)
+        cmd0.remove('<')
+        cmds.insert(0, ['cat', src])
+        idx = 1
+    else:
+        idx = 0
+    cmds.insert(idx, cmd0)
+
+    cmdZ = cmds.pop()
+    if '>' in cmdZ:
+        idx = cmdZ.index('>')
+        dst = cmdZ.pop(idx+1)
+        cmdZ.remove('>')
+    else:
+        dst = None
+    cmds.append(cmdZ)
+
+    pipes=[subprocess.Popen(cmds[0], stdout=subprocess.PIPE)] # first command, no stdin=
+    for i, cmd in enumerate(cmds[1:]):
+        p=subprocess.Popen(cmd, stdin=pipes[i].stdout, stdout=subprocess.PIPE) # i is 0-based
+        pipes.append(p)
+    output=pipes[-1].communicate()[0]
+
+    if dst is not None:
+        with open(dst, 'w') as f:
+            f.write(output)
+            
+    return pipes, output
