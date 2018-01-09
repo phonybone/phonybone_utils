@@ -12,6 +12,10 @@ def maxspan(spans):
     ''' given a list of spans (tuples), return the bounding span '''
     return (min([s[0] for s in spans]), max([s[1] for s in spans])) # yes there are faster ways
     
+def flatten(l):
+    ''' l is a list comprised of sub-lists or tuples.  Return a 1D list containing all the elements of l in order. '''
+    # see https://stackoverflow.com/questions/10632839/python-transform-list-of-tuples-in-to-1-flat-list-or-1-matrix
+    return list(sum(l, ()))
 
 if __name__ == '__main__':
     lol = [[] for _ in xrange(3)]
