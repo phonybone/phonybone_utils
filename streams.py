@@ -62,6 +62,8 @@ def do_pipe(cmds):
       between '>' and filename, '<' and filename.
 
     Pretty primitive; caller beware.
+
+    Also see PipedCmd()
     '''
     cmd0 = cmds.pop(0)
     if '<' in cmd0:
