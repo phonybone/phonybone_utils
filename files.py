@@ -30,12 +30,15 @@ def get_timestamp(path):
     ts = os.path.getmtime(path)
     return time.strftime('%Y-%m-%d %H:%M', time.gmtime(ts))
 
-def replace_ext(path, new_ext):
+def replace_ext(path, new_ext, n_exts=1):
     ''' 
     replace the extension on a path with a new extension.  Replacement occurs
     even if there was no extension on the original path.
     '''
-    head, tail = os.path.splitext(path)
+    head = path
+    while n_exts >= 1:
+        head, tail = os.path.splitext(head)
+        n_exts -= 1
     return head + '.' + new_ext
 
 def package_fileres(pack, fn):
