@@ -59,7 +59,7 @@ if __name__ == '__main__':
 
     from job_service.utils.files import package_fileres
     from job_service.utils.configs import get_config
-     from job_service.utils.strings import ppjson
+    from job_service.utils.strings import ppjson
     
     config_fn = package_fileres('job_service', 'config.ini')
     config = get_config(config_fn)
