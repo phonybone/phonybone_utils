@@ -45,7 +45,7 @@ def get_slice(config, section, *keys):
     return [config.get(section, key) for key in keys]
 
 #-----------------------------------------------------------------------
-def load_attributes_from_config(obj, config, section):
+def load_attributes_from_config(obj, config, section, prepend_section=False):
     ''' 
     Use a config/section to assign attributes to an object (or class).
     
@@ -57,38 +57,46 @@ def load_attributes_from_config(obj, config, section):
     '''
     profile_values = to_dict(config, section)
     for key, values in profile_values.iteritems():
+        attrname = _get_attrname(key, section, prepend_section)
         if key.endswith('_svalues'):
-            _store_values(obj, key, values, str)
+            _store_values(obj, key, attrname, values, str)
         elif key.endswith('_ivalues'):
-            _store_values(obj, key, values, int)
+            _store_values(obj, key, attrname, values, int)
         elif key.endswith('_irange'):
-            _store_range_int(obj, key, values)
+            _store_range_int(obj, key, attrname, values)
         elif key.endswith('_frange'):
-            _store_range_float(obj, key, values)
+            _store_range_float(obj, key, attrname, values)
         else:
-            setattr(obj, key, values)
+            setattr(obj, attrname, values)
 
+def _get_attrname(key, section, prepend_section):
+    attrname = re.sub(r'_[is]values', '', key) # works for ints or strings (could work for floats, too)
+    attrname = key.replace('_irange', '')
+    attrname = key.replace('_frange', '')
+    if prepend_section:
+        attrname = section + '_' + attrname
+    return attrname
 
-def _store_values(obj, key, values_str, typ):
+def _store_values(obj, key, attrname, values_str, typ):
     ''' store a list of values as an attribute  '''
-    attrname = re.sub(r'_[is]values', '', key)
+#    attrname = re.sub(r'_[is]values', '', key) # works for ints or strings (could work for floats, too)
     values = map(typ, re.split(r'[\s,]+', values_str))
     default = values.pop()
     setattr(obj, attrname, values)
     setattr(obj, '{}_default'.format(attrname), default)
 
-def _store_range_int(obj, key, range_str):
+def _store_range_int(obj, key, attrname, range_str):
     ''' store range (list) of ints as an attribute '''
-    attrname = key.replace('_irange', '')
+#    attrname = key.replace('_irange', '')
     first, last, inc, default = map(int, re.split(r'[\s,]+', range_str))
     values = range(first, last+1, inc)
     setattr(obj, attrname, values)
     setattr(obj, '{}_default'.format(attrname), default)
 
 
-def _store_range_float(obj, key, range_str):
+def _store_range_float(obj, key, attrname, range_str):
     ''' store range of floats as an attribute '''
-    attrname = key.replace('_frange', '')
+#    attrname = key.replace('_frange', '')
     first, last, inc, default = map(float, re.split(r'[\s,]+', range_str))
     if first >= last:
         raise ValueError('{} >= {}'.format(first, last))
@@ -97,6 +105,7 @@ def _store_range_float(obj, key, range_str):
     while val <= last:
         values.append(val)
         val += inc
+
     setattr(obj, attrname, values)
     setattr(obj, '{}_default'.format(attrname), default)
 #-----------------------------------------------------------------------
