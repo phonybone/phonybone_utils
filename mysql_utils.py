@@ -8,9 +8,15 @@ import ConfigParser
 import sqlalchemy as sa
 from mysql.connector.errors import Error as _MysqlError
 
+from dicts import hashsubset, to_dict
+
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
     return mysql.connector.connect(host=host, database=database, user=user, password=password)
+
+def get_mysql_from_config(config, section):
+    mysql_args = hashsubset(to_dict(config, section), 'host', 'database', 'user', 'password')
+    return get_mysql(**mysql_args)
 
 def get_mysql_cmdline(opts):
     ''' Connect to a mysql database based on cmd-line options.  
