@@ -2,6 +2,7 @@ import sys
 import os
 import copy
 import datetime
+import md5
 import mysql.connector
 from contextlib import contextmanager
 import ConfigParser
@@ -187,3 +188,8 @@ def table_exists(dbh, tablename):
         except _MysqlError as e:
             print e
             return False
+
+def pw_encrypt(pwd):
+    ''' shim for encryption functionality '''
+    return md5(pwd).hexdigest()
+
