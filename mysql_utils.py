@@ -134,9 +134,12 @@ def clear_table(dbh, db_name, table):
         do_sql(cursor, sql)
     
 def get_db_names(config, section='mysql', key_suffix='_database'):
-    ''' return a dict mapping of database names.  Key is config key, value is database name '''
-    db_names = {opt:config.get(section, opt) for opt in filter(lambda opt: opt.endswith(key_suffix), config.options(section))}
-    return db_names
+    ''' 
+    Return a dict mapping of database names, as read from a config section.
+    Key is config key, value is database name 
+    '''
+    # This should not be here; this should be somewhere specific to Everest
+    return {opt:config.get(section, opt) for opt in filter(lambda opt: opt.endswith(key_suffix), config.options(section))}
 
 
 def save_obj(dbh, record, tablename, primary_key=None, debug=False):
