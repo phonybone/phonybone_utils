@@ -6,7 +6,7 @@ class PipedCmd(object):
         # check that each command is a list of lists
 
     def __str__(self):
-        return ' | '.join([' '.join(cmd) for cmd in cmds])
+        return ' | '.join([' '.join(cmd) for cmd in self.cmds])
     
     def start(self):
         # check for input redirection:
