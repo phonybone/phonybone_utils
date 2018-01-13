@@ -50,7 +50,7 @@ class PipedCmd(object):
 
     def output(self):
         # communicated with last cmd to get output
-        std_out, std_err = self.pipe[-1].communicate()[0] # yeah?  Not collect all of them????
+        std_out, std_err = self.pipe[-1].communicate() # yeah?  Not collect all of them????
 
         # write output if needed:
         dst = getattr(self, 'dst', None)
