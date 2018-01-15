@@ -44,21 +44,21 @@ class configured_class(object):
 
     def __call__(self, cls):
         clsfile = inspect.getfile(cls)
-        config_fn = replace_ext(os.path.basename(clsfile), 'ini')
-        clsname = cls.__name__  # shorthand
 
         # try to get default values from default config and section:
         if self.defaults_fn is not None and self.def_section is not None:
-            if not os.path.isabs(self.defaults_fn):
+            if not os.path.isabs(self.defaults_fn): # locate defaults_fn
                 modname, _ = os.path.splitext(os.path.basename(clsfile))
-                self.defaults_fn = package_fileres(modname, self.defaults_fn)            
+                self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
             def_config = get_config(self.defaults_fn)
             defaults = to_dict(def_config, self.def_section)
         else:
             defaults = {}
-        cls_config = get_config(config_fn, defaults=defaults)
 
-        load_attributes_from_config(cls, cls_config, clsname)
+        # get class config and inject values:
+        config_fn = os.path.join(os.path.dirname(clsfile), replace_ext(os.path.basename(clsfile), 'ini'))
+        cls_config = get_config(config_fn, defaults=defaults)
+        load_attributes_from_config(cls, cls_config, cls.__name__)
         return cls
         
 
