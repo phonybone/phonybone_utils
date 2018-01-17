@@ -115,11 +115,8 @@ def get_cursor(dbh, **cursor_args):
         cursor = dbh.cursor(**cursor_args)
         yield cursor
     finally:
-        try:
-            cursor.close()      # raises on fail to create cursor
-            dbh.commit()
-        except UnboundLocalError:
-            pass
+        cursor.close()      # raises UnboundLocalVar on fail to create cursor; usually a threading error
+        dbh.commit()
 
 
 def do_sql(cursor, sql, values=tuple(), f=sys.stderr):
