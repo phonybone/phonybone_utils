@@ -34,7 +34,9 @@ class PipedCmd(object):
         self.cmds.append(cmdZ)
 
         # create Popen objects
-        pipe=[subprocess.Popen(self.cmds[0], stdout=subprocess.PIPE, stderr=subprocess.PIPE)] # first command, no stdin=
+        p0 = subprocess.Popen(self.cmds[0], stdout=subprocess.PIPE, stderr=subprocess.PIPE) # first command, no stdin=
+        pipe=[p0] 
+        
         for i, cmd in enumerate(self.cmds[1:]):
             p=subprocess.Popen(cmd, stdin=pipe[i].stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE) # i is 0-based
             pipe.append(p)
@@ -42,9 +44,12 @@ class PipedCmd(object):
 
 
     def wait(self):
+        # wait for last command to finish
+        self.pipe[-1].wait()
         # wait for all commands to finish
-        for cmd in self.pipe:
-            cmd.wait()
+        # for cmd in self.pipe:
+        #     print 'waiting on pid {}'.format(cmd.pid)
+        #     cmd.wait()          # THIS IS HANGING
             # print 'process {} done: rc={}'.format(cmd.pid, cmd.poll())
 
 
