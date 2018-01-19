@@ -130,13 +130,13 @@ def clear_table(dbh, db_name, table):
         sql = "DELETE FROM {}.{}".format(db_name, table)
         do_sql(cursor, sql)
     
-def get_db_names(config, section='mysql', key_suffix='_database'):
-    ''' 
-    Return a dict mapping of database names, as read from a config section.
-    Key is config key, value is database name 
-    '''
-    # This should not be here; this should be somewhere specific to Everest
-    return {opt:config.get(section, opt) for opt in filter(lambda opt: opt.endswith(key_suffix), config.options(section))}
+# def get_db_names(config, section='mysql', key_suffix='_database'):
+#     ''' 
+#     Return a dict mapping of database names, as read from a config section.
+#     Key is config key, value is database name 
+#     '''
+#     # This should not be here; this should be somewhere specific to Everest
+#     return {opt:config.get(section, opt) for opt in filter(lambda opt: opt.endswith(key_suffix), config.options(section))}
 
 
 def save_obj(dbh, record, tablename, primary_key=None, debug=False):
