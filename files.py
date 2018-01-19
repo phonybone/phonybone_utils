@@ -44,6 +44,17 @@ def replace_ext(path, new_ext, n_exts=1):
 def package_fileres(pack, fn):
     return pr.resource_filename(pack, fn)
 
+def ensure_folder(folder):
+    try:
+        os.makedirs(folder)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(folder):
+            pass
+        else:
+            raise        
+
+
+
 if __name__=='__main__':
     path = '/usr/local/everest/data/var/UserData/Victor/Reads/LB5025/LB5025germline_PG0-718_LB4852V_rename.fastq'
     # for units in 'auto bytes kb mb gb pb'.split(' '):
