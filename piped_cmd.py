@@ -1,4 +1,4 @@
-import subprocess
+ import subprocess
 
 class PipedCmd(object):
     def __init__(self, cmds):
@@ -66,9 +66,19 @@ class PipedCmd(object):
 
         return std_out, std_err
 
-    def status(self):
-        ''' return return codes for all processes in pipe; if processes are not done, rc is None '''
-        return all([cmd.poll() is not None for cmd in self.pipe])
+    def return_codes(self):
+        return [cmd.poll() for cmd in self.pipe]
+    
+    def success(self):
+        ''' return all return codes are 0; if any return code is None (still running), raise ValueError '''
+        for cmd in self.pipe:
+            rc = cmd.poll()
+            if rc is None:
+                raise ValueError('Pipe still running')
+            if rc != 0:
+                return False
+        else:
+            return True
 
 if __name__=='__main__':
     def test_pipe(cmds):
