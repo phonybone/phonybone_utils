@@ -51,9 +51,6 @@ def get_mysql_cmdline(opts):
     
 def get_field_info(dbh, tablename):
     '''
-    Populate various cls members with information about the fields of the corresponding
-    database table.
-
     Returns:
     - obj_fields gets a list of the columns in the table
     - column_info get a dict keyed on column name; holds col_type, null_ok, key, default, extra, an py_type
@@ -130,14 +127,6 @@ def clear_table(dbh, db_name, table):
         sql = "DELETE FROM {}.{}".format(db_name, table)
         do_sql(cursor, sql)
     
-# def get_db_names(config, section='mysql', key_suffix='_database'):
-#     ''' 
-#     Return a dict mapping of database names, as read from a config section.
-#     Key is config key, value is database name 
-#     '''
-#     # This should not be here; this should be somewhere specific to Everest
-#     return {opt:config.get(section, opt) for opt in filter(lambda opt: opt.endswith(key_suffix), config.options(section))}
-
 
 def save_obj(dbh, record, tablename, primary_key=None, debug=False):
     ''' 
@@ -193,3 +182,11 @@ def pw_encrypt(pwd):
     ''' shim for encryption functionality '''
     return md5(pwd).hexdigest()
 
+
+@contextmanager
+def lock_tables(cursor, tablename, db_names):
+    tables = ', '.join(['{}.{} WRITE'.format(db_name, tablename) for db_name in db_names])
+    sql = 'LOCK TABLE {}'.format(tables)
+    cursor.execute(sql)
+    yield
+    cursor.execute('UNLOCK TABLES')
