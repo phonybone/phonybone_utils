@@ -7,9 +7,11 @@ import mysql.connector
 from contextlib import contextmanager
 import ConfigParser
 import sqlalchemy as sa
+import multiprocessing as mp
 from mysql.connector.errors import Error as _MysqlError
 
 from dicts import hashsubset, to_dict
+from strings import ppjson
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
@@ -51,9 +53,6 @@ def get_mysql_cmdline(opts):
     
 def get_field_info(dbh, tablename):
     '''
-    Populate various cls members with information about the fields of the corresponding
-    database table.
-
     Returns:
     - obj_fields gets a list of the columns in the table
     - column_info get a dict keyed on column name; holds col_type, null_ok, key, default, extra, an py_type
@@ -111,9 +110,13 @@ def mysql_t2t(mytype):
         
 @contextmanager
 def get_cursor(dbh, **cursor_args):
+    if type(dbh) is not mysql.connector.connection.MySQLConnection:
+        raise TypeError(dbh)
     try:
         cursor = dbh.cursor(**cursor_args)
         yield cursor
+    except Exception as e:
+        raise
     finally:
         cursor.close()      # raises UnboundLocalVar on fail to create cursor; usually a threading error
         dbh.commit()
@@ -130,14 +133,6 @@ def clear_table(dbh, db_name, table):
         sql = "DELETE FROM {}.{}".format(db_name, table)
         do_sql(cursor, sql)
     
-# def get_db_names(config, section='mysql', key_suffix='_database'):
-#     ''' 
-#     Return a dict mapping of database names, as read from a config section.
-#     Key is config key, value is database name 
-#     '''
-#     # This should not be here; this should be somewhere specific to Everest
-#     return {opt:config.get(section, opt) for opt in filter(lambda opt: opt.endswith(key_suffix), config.options(section))}
-
 
 def save_obj(dbh, record, tablename, primary_key=None, debug=False):
     ''' 
@@ -183,13 +178,20 @@ def table_exists(dbh, tablename):
     with get_cursor(dbh) as cursor:
         try:
             do_sql(cursor, 'SELECT COUNT(*) FROM {}'.format(tablename))
-            list(cursor)
+            list(cursor)        # suck up cursor contents
             return True
         except _MysqlError as e:
-            print e
             return False
 
 def pw_encrypt(pwd):
     ''' shim for encryption functionality '''
     return md5(pwd).hexdigest()
 
+
+@contextmanager
+def lock_tables(cursor, tablename, db_names):
+    tables = ', '.join(['{}.{} WRITE'.format(db_name, tablename) for db_name in db_names])
+    sql = 'LOCK TABLE {}'.format(tables)
+    cursor.execute(sql)
+    yield
+    cursor.execute('UNLOCK TABLES')
