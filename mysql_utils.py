@@ -7,9 +7,11 @@ import mysql.connector
 from contextlib import contextmanager
 import ConfigParser
 import sqlalchemy as sa
+import multiprocessing as mp
 from mysql.connector.errors import Error as _MysqlError
 
 from dicts import hashsubset, to_dict
+from strings import ppjson
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
@@ -108,9 +110,13 @@ def mysql_t2t(mytype):
         
 @contextmanager
 def get_cursor(dbh, **cursor_args):
+    if type(dbh) is not mysql.connector.connection.MySQLConnection:
+        raise TypeError(dbh)
     try:
         cursor = dbh.cursor(**cursor_args)
         yield cursor
+    except Exception as e:
+        raise
     finally:
         cursor.close()      # raises UnboundLocalVar on fail to create cursor; usually a threading error
         dbh.commit()
@@ -172,10 +178,9 @@ def table_exists(dbh, tablename):
     with get_cursor(dbh) as cursor:
         try:
             do_sql(cursor, 'SELECT COUNT(*) FROM {}'.format(tablename))
-            list(cursor)
+            list(cursor)        # suck up cursor contents
             return True
         except _MysqlError as e:
-            print e
             return False
 
 def pw_encrypt(pwd):
