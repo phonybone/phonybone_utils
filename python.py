@@ -37,23 +37,31 @@ class configured_class(object):
     relative to the class's package (unless the filename given
     is an absolute path) and uses the section specified.
     '''
-    def __init__(self, defaults_fn=None, def_section=None):
-        self.defaults_fn = defaults_fn
-        self.def_section = def_section
-        
+    # def __init__(self, defaults_fn=None, def_section=None):
+    def __init__(self, *args):
+        if len(args) == 1:
+            raise TypeError('bad args: must be 0 or >2: {}'.format(args))
+        if len(args) >= 2:
+            args = list(args)
+            self.defaults_fn = args.pop(0)
+            self.def_sections = args
+        else:
+            self.defaults_fn = None
+            self.def_sections = None
 
     def __call__(self, cls):
+        print 'configured_class({}, {}, {})'.format(cls.__name__, self.defaults_fn, self.def_sections)
         clsfile = inspect.getfile(cls)
 
         # try to get default values from default config and section:
-        if self.defaults_fn is not None and self.def_section is not None:
-            if not os.path.isabs(self.defaults_fn): # locate defaults_fn
-                modname, _ = os.path.splitext(os.path.basename(clsfile))
-                self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
-            def_config = get_config(self.defaults_fn)
-            defaults = to_dict(def_config, self.def_section)
-        else:
-            defaults = {}
+        defaults = {}
+        if self.defaults_fn is not None and self.def_sections is not None:
+            for dsect in self.def_sections:
+                if not os.path.isabs(self.defaults_fn): # locate defaults_fn
+                    self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
+                def_config = get_config(self.defaults_fn)
+                defaults.update(to_dict(def_config, dsect))
+
 
         # get class config and inject values:
         config_fn = os.path.join(os.path.dirname(clsfile), replace_ext(os.path.basename(clsfile), 'ini'))
