@@ -50,7 +50,6 @@ class configured_class(object):
             self.def_sections = None
 
     def __call__(self, cls):
-        print 'configured_class({}, {}, {})'.format(cls.__name__, self.defaults_fn, self.def_sections)
         clsfile = inspect.getfile(cls)
 
         # try to get default values from default config and section:
