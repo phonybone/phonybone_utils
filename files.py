@@ -16,10 +16,14 @@ def get_size(path, units='auto'):
     
     units = units.lower()
     raw_size = os.stat(path).st_size
+    if units == 'raw':
+        return raw_size
     try:
+        # try to return answer in requested units
         divisor = divisors[units]
         size = raw_size/divisor
     except KeyError:
+        # didn't recognize requested units, find first answer that prints in 3 decimal places
         for units, divisor in divisors.iteritems():
             size = raw_size/divisor
             if len(str(size)) <= 4:
