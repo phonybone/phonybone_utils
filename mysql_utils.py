@@ -8,7 +8,7 @@ from contextlib import contextmanager
 import ConfigParser
 import sqlalchemy as sa
 import multiprocessing as mp
-from mysql.connector.errors import Error as _MysqlError
+from mysql.connector.errors import Error as _MysqlError, OperationalError
 
 from dicts import hashsubset, to_dict
 from strings import ppjson
@@ -113,10 +113,16 @@ def get_cursor(dbh, **cursor_args):
     if type(dbh) is not mysql.connector.connection.MySQLConnection:
         raise TypeError(dbh)
     try:
-        cursor = dbh.cursor(**cursor_args)
+        try:
+            cursor = dbh.cursor(**cursor_args)
+        except OperationalError as e:
+            # reconnect and try again
+            dbh.reconnect()
+            cursor = dbh.cursor(**cursor_args)
         yield cursor
+
     except Exception as e:
-        raise
+        raise                   # why? 
     finally:
         cursor.close()      # raises UnboundLocalVar on fail to create cursor; usually a threading error
         dbh.commit()
