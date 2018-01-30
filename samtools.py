@@ -4,6 +4,10 @@ Utilities for dealing with pysam and samtools.
 import os
 import re
 import Bio.SeqIO
+import csv
+from collections import Counter
+import subprocess as sp
+from .streams import warn, get_output_stream
 
 def get_ref_ids(bamfile):
     ''' generator for sequence ids contained in the bamfile header '''
@@ -102,6 +106,67 @@ def fastasize(seq, llen=50):
         if i > len(seq):
             return '\n'.join(lines)
 
+
+
+def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
+    ''' 
+    Create amplicon .fasta from .bed file and a ref genome.
+    
+    bed_fn: 
+        a .BED file (input)
+    ref_fa: 
+        file in which to write the genome (.fasta format) (may be '-' for stdout)
+    ref_genome_dir: 
+        a directory that contains .fa sequenes for each chromosome mentioned in the .BED file (in .fasta format)
+    get_gene_name: 
+        a callable that takes one parameter, a list obtained from each line of the .BED file; must return a gene name
+    flank_bp: 
+        number of flanking bases on each side of gene sequence to add to the output sequence.
+
+    returns: None
+    '''
+    if get_gene_name is None:
+        def get_gene_name(bline):
+            return bline[4]
+
+    gene_n = Counter()          # used to create title line in .fasta file
+    with get_output_stream(ref_fa) as output:
+        with open(bed_fn) as bed:
+            reader = csv.reader(bed, delimiter='\t')
+            header = reader.next() # burn the header
+            for bline in reader:
+                chrm = bline[0]
+                start=int(bline[1]) - flank_bp
+                stop = int(bline[2]) + flank_bp
+                gene = get_gene_name(bline)
+
+                chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(chrm))
+                seq_fa = fastasize(get_seq(chrm_fa, start, stop))
+                gene_n[gene] += 1
+                title = '>{}_{}'.format(gene, gene_n[gene])
+                output.write('{}\n'.format(title))
+                output.write('{}\n'.format(seq_fa))
+        if ref_fa != '-':
+            warn('{} written'.format(ref_fa))
+
+
+
+
+def bowtie2_build(fasta_fn, bowtie_idxs, idx_name, bowtie2_build_exe):
+    ''' call bowtie2-build to create bowtie2 indexes from a .fasta file '''
+    bt_build_cmd = [bowtie2_build_exe, fasta_fn, os.path.join(bowtie_idxs, idx_name)]
+    warn('cmd: {}'.format(' '.join(bt_build_cmd)))
+    try:
+        output = sp.check_output(bt_build_cmd, stderr=sp.PIPE)
+        warn('{}* files written'.format(bowtie_idxs))
+        return output
+    except sp.CalledProcessError as e:
+        cmd_str = ' '.join(bt_build_cmd)
+        setattr(e, 'cmd', cmd_str)
+        raise e
+
+
+
 if __name__ == '__main__':
     def test_seq():
         import random
@@ -127,4 +192,7 @@ if __name__ == '__main__':
         from strings import ppjson
         print ppjson(amplicon)
 
-    test_ingest_amplicon()
+    def test_bed2ref_fa():
+        pass
+
+    test_bed2ref_fa()
