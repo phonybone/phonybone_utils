@@ -127,7 +127,8 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
     '''
     if get_gene_name is None:
         def get_gene_name(bline):
-            return bline[4]
+            return bline[5].split(';')[0]
+            # return bline[4]
 
     gene_n = Counter()          # used to create title line in .fasta file
     with get_output_stream(ref_fa) as output:
@@ -143,22 +144,29 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
                 chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(chrm))
                 seq_fa = fastasize(get_seq(chrm_fa, start, stop))
                 gene_n[gene] += 1
-                title = '>{}_{}'.format(gene, gene_n[gene])
+                title = '>{}_{}_{}_{}'.format(gene, gene_n[gene], start, stop)
                 output.write('{}\n'.format(title))
                 output.write('{}\n'.format(seq_fa))
-        if ref_fa != '-':
-            warn('{} written'.format(ref_fa))
 
 
-
+def create_fasta_fai(ref_fa, samtools):
+    try:
+        cmd = [samtools, 'faidx', ref_fa]
+        output = sp.check_output(cmd, stderr=sp.PIPE)
+        return output
+    except sp.CalledProcessError as e:
+        cmd_str = ' '.join(bt_build_cmd)
+        setattr(e, 'cmd', cmd_str)
+        raise e
 
 def bowtie2_build(fasta_fn, bowtie_idxs, idx_name, bowtie2_build_exe):
-    ''' call bowtie2-build to create bowtie2 indexes from a .fasta file '''
+    ''' 
+    call bowtie2-build to create bowtie2 indexes from a .fasta file.
+    returns the output of the bowtie2 build command.
+    '''
     bt_build_cmd = [bowtie2_build_exe, fasta_fn, os.path.join(bowtie_idxs, idx_name)]
-    warn('cmd: {}'.format(' '.join(bt_build_cmd)))
     try:
         output = sp.check_output(bt_build_cmd, stderr=sp.PIPE)
-        warn('{}* files written'.format(bowtie_idxs))
         return output
     except sp.CalledProcessError as e:
         cmd_str = ' '.join(bt_build_cmd)
@@ -166,6 +174,38 @@ def bowtie2_build(fasta_fn, bowtie_idxs, idx_name, bowtie2_build_exe):
         raise e
 
 
+def grep_hits(sam_file):
+    import sys
+    csv.field_size_limit(sys.maxsize)
+    with open(sam_file) as f:
+        reader = csv.reader(f, delimiter='\t')
+        for fields in reader:
+            if fields[0].startswith('@'):
+                continue
+            flag = int(fields[1])
+            if flag & 4:
+                continue
+            yield fields
+            
+            
+def grep_indels(vcf_file, filter_field=7, filter_str='INDEL'):
+    ''' 
+    extract variants marked as INDEL from a vcf file 
+    '''
+    with open(vcf_file) as f:
+        reader = csv.reader(f, delimiter='\t')
+        for fields in reader:
+            if fields[0].startswith('##'):
+                continue
+            if fields[0].startswith('#'):
+                field_names = fields
+                field_names[0] = field_names[0].replace('#', '')
+                continue
+            if filter_str not in fields[filter_field]:
+                continue
+            yield {f:v for f,v in zip(field_names, fields)}
+                
+                
 
 if __name__ == '__main__':
     def test_seq():
