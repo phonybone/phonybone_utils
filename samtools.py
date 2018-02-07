@@ -1,13 +1,17 @@
 '''
 Utilities for dealing with pysam and samtools.
 '''
+import sys
 import os
 import re
+import pysam
 import Bio.SeqIO
 import csv
-from collections import Counter
+from collections import Counter, namedtuple
 import subprocess as sp
-from .streams import warn, get_output_stream
+from streams import warn, get_output_stream
+from strings import ppjson, qw
+from span_mixin import SpanMixin
 
 def get_ref_ids(bamfile):
     ''' generator for sequence ids contained in the bamfile header '''
@@ -15,6 +19,9 @@ def get_ref_ids(bamfile):
 
 def get_ref_ids_and_len(bamfile):
     return ((h['SN'],h['LN']) for h in bamfile.header['SQ'])
+
+
+    
 
 
 def ingest_amplicon(amplicon_fn):
@@ -107,6 +114,22 @@ def fastasize(seq, llen=50):
             return '\n'.join(lines)
 
 
+class GeneSpan(SpanMixin):
+    def __init__(self, chrom, gene, start, stop):
+        self.chrom = chrom
+        self.gene = gene
+        self.start = start
+        self.stop = stop
+
+    def __str__(self):
+        return '{}.{}: {}-{}'.format(self.chrom, self.gene, self.start, self.stop)
+
+    def merge(self, other):
+        if not self.chrom == other.chrom:
+            raise ValueError('{} != {}'.format(self.chrom, other.chrom))
+        super(GeneSpan, self).merge(other)
+        self.gene = self.gene + '-' + other.gene
+        return self
 
 def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
     ''' 
@@ -129,22 +152,27 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
         def get_gene_name(bline):
             return bline[5].split(';')[0]
             # return bline[4]
+ 
+    chroms = {}
+    with open(bed_fn) as bed:
+        reader = csv.reader(bed, delimiter='\t')
+        header = reader.next() # burn the header
+        for bline in reader:
+            gene = GeneSpan(
+                chrom=bline[0],
+                start=int(bline[1]) - flank_bp,
+                stop=int(bline[2]) + flank_bp,
+                gene=get_gene_name(bline),
+            )
+            chroms.setdefault(gene.chrom, []).append(gene)
 
-    gene_n = Counter()          # used to create title line in .fasta file
     with get_output_stream(ref_fa) as output:
-        with open(bed_fn) as bed:
-            reader = csv.reader(bed, delimiter='\t')
-            header = reader.next() # burn the header
-            for bline in reader:
-                chrm = bline[0]
-                start=int(bline[1]) - flank_bp
-                stop = int(bline[2]) + flank_bp
-                gene = get_gene_name(bline)
-
-                chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(chrm))
-                seq_fa = fastasize(get_seq(chrm_fa, start, stop))
-                gene_n[gene] += 1
-                title = '>{}_{}_{}_{}'.format(gene, gene_n[gene], start, stop)
+        for chrom, genes in chroms.iteritems():
+            genespans = SpanMixin.merge_overlapping(genes)
+            for span in genespans:
+                chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(span.chrom))
+                seq_fa = fastasize(get_seq(chrm_fa, span.start, span.stop))
+                title = '>{}_{}_{}_{}'.format(span.chrom, span.gene, span.start, span.stop)
                 output.write('{}\n'.format(title))
                 output.write('{}\n'.format(seq_fa))
 
@@ -174,20 +202,6 @@ def bowtie2_build(fasta_fn, bowtie_idxs, idx_name, bowtie2_build_exe):
         raise e
 
 
-def grep_hits(sam_file):
-    import sys
-    csv.field_size_limit(sys.maxsize)
-    with open(sam_file) as f:
-        reader = csv.reader(f, delimiter='\t')
-        for fields in reader:
-            if fields[0].startswith('@'):
-                continue
-            flag = int(fields[1])
-            if flag & 4:
-                continue
-            yield fields
-            
-            
 def grep_indels(vcf_file, filter_field=7, filter_str='INDEL'):
     ''' 
     extract variants marked as INDEL from a vcf file 
@@ -232,7 +246,3 @@ if __name__ == '__main__':
         from strings import ppjson
         print ppjson(amplicon)
 
-    def test_bed2ref_fa():
-        pass
-
-    test_bed2ref_fa()
