@@ -3,6 +3,7 @@ Random string utils.
 '''
 
 import re
+import json
 
 def expand_range_list(src):
     '''
@@ -54,9 +55,10 @@ def chunks(s, ll):
     return chunks
 
 
-import json
 class StringEncoder(json.JSONEncoder):
     def default(self, obj):
+        if hasattr(obj, 'as_json'):
+            return obj.as_json()
         if type(obj) is set:
             return map(str, obj)
         try:
@@ -72,3 +74,26 @@ def qw(s):
         return []
     return s.split(' ')
 
+if __name__ == '__main__':
+    def test_ppjson():
+        import datetime as dt
+
+        class Foo(object):
+            fmt = '%a, %m %d %Y'
+            def __init__(self, string, dob, z):
+                self.string = string
+                self.dob = dob
+                self.z = z
+
+            def as_json(self):
+                return {
+                    'string': self.string,
+                    'dob': self.dob.strftime(self.fmt),
+                    'z': repr(self.z)
+                    }
+
+
+        foo = Foo('fred', dt.datetime.now(), 3+2j)
+        print 'foo: {}'.format(ppjson(foo))
+
+    test_ppjson()
