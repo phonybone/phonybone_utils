@@ -59,7 +59,9 @@ def ensure_folder(folder):
         else:
             raise        
 
-
+def truncate(fn):
+    with open(fn, 'w') as f:
+        pass
 
 if __name__=='__main__':
     path = '/usr/local/everest/data/var/UserData/Victor/Reads/LB5025/LB5025germline_PG0-718_LB4852V_rename.fastq'

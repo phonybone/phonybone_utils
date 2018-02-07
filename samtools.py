@@ -1,9 +1,17 @@
 '''
 Utilities for dealing with pysam and samtools.
 '''
+import sys
 import os
 import re
+import pysam
 import Bio.SeqIO
+import csv
+from collections import Counter, namedtuple
+import subprocess as sp
+from streams import warn, get_output_stream
+from strings import ppjson, qw
+from span_mixin import SpanMixin
 
 def get_ref_ids(bamfile):
     ''' generator for sequence ids contained in the bamfile header '''
@@ -11,6 +19,9 @@ def get_ref_ids(bamfile):
 
 def get_ref_ids_and_len(bamfile):
     return ((h['SN'],h['LN']) for h in bamfile.header['SQ'])
+
+
+    
 
 
 def ingest_amplicon(amplicon_fn):
@@ -102,6 +113,114 @@ def fastasize(seq, llen=50):
         if i > len(seq):
             return '\n'.join(lines)
 
+
+class GeneSpan(SpanMixin):
+    def __init__(self, chrom, gene, start, stop):
+        self.chrom = chrom
+        self.gene = gene
+        self.start = start
+        self.stop = stop
+
+    def __str__(self):
+        return '{}.{}: {}-{}'.format(self.chrom, self.gene, self.start, self.stop)
+
+    def merge(self, other):
+        if not self.chrom == other.chrom:
+            raise ValueError('{} != {}'.format(self.chrom, other.chrom))
+        super(GeneSpan, self).merge(other)
+        self.gene = self.gene + '-' + other.gene
+        return self
+
+def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
+    ''' 
+    Create amplicon .fasta from .bed file and a ref genome.
+    
+    bed_fn: 
+        a .BED file (input)
+    ref_fa: 
+        file in which to write the genome (.fasta format) (may be '-' for stdout)
+    ref_genome_dir: 
+        a directory that contains .fa sequenes for each chromosome mentioned in the .BED file (in .fasta format)
+    get_gene_name: 
+        a callable that takes one parameter, a list obtained from each line of the .BED file; must return a gene name
+    flank_bp: 
+        number of flanking bases on each side of gene sequence to add to the output sequence.
+
+    returns: None
+    '''
+    if get_gene_name is None:
+        def get_gene_name(bline):
+            return bline[5].split(';')[0]
+            # return bline[4]
+ 
+    chroms = {}
+    with open(bed_fn) as bed:
+        reader = csv.reader(bed, delimiter='\t')
+        header = reader.next() # burn the header
+        for bline in reader:
+            gene = GeneSpan(
+                chrom=bline[0],
+                start=int(bline[1]) - flank_bp,
+                stop=int(bline[2]) + flank_bp,
+                gene=get_gene_name(bline),
+            )
+            chroms.setdefault(gene.chrom, []).append(gene)
+
+    with get_output_stream(ref_fa) as output:
+        for chrom, genes in chroms.iteritems():
+            genespans = SpanMixin.merge_overlapping(genes)
+            for span in genespans:
+                chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(span.chrom))
+                seq_fa = fastasize(get_seq(chrm_fa, span.start, span.stop))
+                title = '>{}_{}_{}_{}'.format(span.chrom, span.gene, span.start, span.stop)
+                output.write('{}\n'.format(title))
+                output.write('{}\n'.format(seq_fa))
+
+
+def create_fasta_fai(ref_fa, samtools):
+    try:
+        cmd = [samtools, 'faidx', ref_fa]
+        output = sp.check_output(cmd, stderr=sp.PIPE)
+        return output
+    except sp.CalledProcessError as e:
+        cmd_str = ' '.join(bt_build_cmd)
+        setattr(e, 'cmd', cmd_str)
+        raise e
+
+def bowtie2_build(fasta_fn, bowtie_idxs, idx_name, bowtie2_build_exe):
+    ''' 
+    call bowtie2-build to create bowtie2 indexes from a .fasta file.
+    returns the output of the bowtie2 build command.
+    '''
+    bt_build_cmd = [bowtie2_build_exe, fasta_fn, os.path.join(bowtie_idxs, idx_name)]
+    try:
+        output = sp.check_output(bt_build_cmd, stderr=sp.PIPE)
+        return output
+    except sp.CalledProcessError as e:
+        cmd_str = ' '.join(bt_build_cmd)
+        setattr(e, 'cmd', cmd_str)
+        raise e
+
+
+def grep_indels(vcf_file, filter_field=7, filter_str='INDEL'):
+    ''' 
+    extract variants marked as INDEL from a vcf file 
+    '''
+    with open(vcf_file) as f:
+        reader = csv.reader(f, delimiter='\t')
+        for fields in reader:
+            if fields[0].startswith('##'):
+                continue
+            if fields[0].startswith('#'):
+                field_names = fields
+                field_names[0] = field_names[0].replace('#', '')
+                continue
+            if filter_str not in fields[filter_field]:
+                continue
+            yield {f:v for f,v in zip(field_names, fields)}
+                
+                
+
 if __name__ == '__main__':
     def test_seq():
         import random
@@ -127,4 +246,3 @@ if __name__ == '__main__':
         from strings import ppjson
         print ppjson(amplicon)
 
-    test_ingest_amplicon()
