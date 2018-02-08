@@ -11,7 +11,31 @@ import multiprocessing as mp
 from mysql.connector.errors import Error as _MysqlError, OperationalError
 
 from dicts import hashsubset, to_dict
-from strings import ppjson
+from strings import ppjson, qw
+
+def create_everest_db(dbh, new_db, force, drop_db):
+    '''
+    Create a new everest database.
+    Grants all access permission to users everest_user and everest_admin.
+    
+    '''
+    with get_cursor(dbh) as cursor:
+        if drop_db:
+            do_sql(cursor, 'DROP DATABASE IF EXISTS {}'.format(new_db))
+            
+        sql = 'CREATE DATABASE IF NOT EXISTS {}'.format(new_db)
+        do_sql(cursor, sql)
+
+        sql = 'USE {}'.format(new_db)
+        do_sql(cursor, sql)
+        
+        for user in qw('everest_user everest_admin'):
+            sql = "GRANT ALL ON {}.* TO '{}'@'localhost'".format(new_db, user)
+            do_sql(cursor, sql)
+
+        sql = 'FLUSH PRIVILEGES'
+        do_sql(cursor, sql)
+
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
@@ -22,7 +46,8 @@ def get_mysql_from_config(config, section):
     return get_mysql(**mysql_args)
 
 def get_mysql_cmdline(opts):
-    ''' Connect to a mysql database based on cmd-line options.  
+    ''' 
+    Connect to a mysql database based on cmd-line options.  
     Also looks in ~/.my.cnf for missing values, args in opts have precedence.
     opts is a Namespace object as returned by argparse.parse_args()
     '''
