@@ -183,7 +183,7 @@ def create_fasta_fai(ref_fa, samtools):
         output = sp.check_output(cmd, stderr=sp.PIPE)
         return output
     except sp.CalledProcessError as e:
-        cmd_str = ' '.join(bt_build_cmd)
+        cmd_str = ' '.join(cmd)
         setattr(e, 'cmd', cmd_str)
         raise e
 
