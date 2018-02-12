@@ -12,6 +12,7 @@ import subprocess as sp
 from streams import warn, get_output_stream
 from strings import ppjson, qw
 from span_mixin import SpanMixin
+from files import ensure_folder
 
 def get_ref_ids(bamfile):
     ''' generator for sequence ids contained in the bamfile header '''
@@ -150,8 +151,8 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
     '''
     if get_gene_name is None:
         def get_gene_name(bline):
-            return bline[5].split(';')[0]
-            # return bline[4]
+            # return bline[5].split(';')[0]
+            return bline[4]
  
     chroms = {}
     with open(bed_fn) as bed:
@@ -166,16 +167,18 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
             )
             chroms.setdefault(gene.chrom, []).append(gene)
 
+    rx = re.compile(r'^chr(\d|1\d|2[012]|X|Y)$')
     with get_output_stream(ref_fa) as output:
         for chrom, genes in chroms.iteritems():
             genespans = SpanMixin.merge_overlapping(genes)
             for span in genespans:
+                if not re.match(rx, span.chrom):
+                    raise ValueError('bad chromosome name: {}'.format(span.chrom))
                 chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(span.chrom))
                 seq_fa = fastasize(get_seq(chrm_fa, span.start, span.stop))
                 title = '>{}_{}_{}_{}'.format(span.chrom, span.gene, span.start, span.stop)
                 output.write('{}\n'.format(title))
-                output.write('{}\n'.format(seq_fa))
-
+                output.write('{}\n'.format(seq_fa.strip()))
 
 def create_fasta_fai(ref_fa, samtools):
     try:
@@ -192,7 +195,9 @@ def bowtie2_build(fasta_fn, bowtie_idxs, idx_name, bowtie2_build_exe):
     call bowtie2-build to create bowtie2 indexes from a .fasta file.
     returns the output of the bowtie2 build command.
     '''
+    ensure_folder(bowtie_idxs)
     bt_build_cmd = [bowtie2_build_exe, fasta_fn, os.path.join(bowtie_idxs, idx_name)]
+
     try:
         output = sp.check_output(bt_build_cmd, stderr=sp.PIPE)
         return output
