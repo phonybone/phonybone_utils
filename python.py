@@ -37,7 +37,6 @@ class configured_class(object):
     relative to the class's package (unless the filename given
     is an absolute path) and uses the section specified.
     '''
-    # def __init__(self, defaults_fn=None, def_section=None):
     def __init__(self, *args):
         if len(args) == 1:
             raise TypeError('bad args: must be 0 or >2: {}'.format(args))
@@ -60,7 +59,6 @@ class configured_class(object):
                     self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
                 def_config = get_config(self.defaults_fn)
                 defaults.update(to_dict(def_config, dsect))
-
 
         # get class config and inject values:
         config_fn = os.path.join(os.path.dirname(clsfile), replace_ext(os.path.basename(clsfile), 'ini'))
