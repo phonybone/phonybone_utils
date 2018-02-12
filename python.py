@@ -4,6 +4,7 @@ Utility functions related to general-purpose python.
 import os
 import importlib
 import inspect
+import pkg_resources as pr
 from files import package_fileres, replace_ext
 from configs import get_config, load_attributes_from_config, to_dict
 
@@ -50,9 +51,15 @@ class configured_class(object):
 
     def __call__(self, cls):
         clsfile = inspect.getfile(cls)
+        pkg = clsfile.split('.')[0]
+        pkg_root = os.path.abspath(pr.resource_filename('bed_file_service', '..'))
 
         # try to get default values from default config and section:
-        defaults = {}
+        defaults = {
+            '__class_file': clsfile,
+            '__module': cls.__module__,
+            '__pkg_root': pkg_root,
+            }
         if self.defaults_fn is not None and self.def_sections is not None:
             for dsect in self.def_sections:
                 if not os.path.isabs(self.defaults_fn): # locate defaults_fn

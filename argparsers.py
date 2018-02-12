@@ -10,6 +10,7 @@ from importlib import import_module
 def parser_config(parser, config):
     ''' 
     Use sections/values from the config file to initialize an argparser.
+    One cmd-line arg per config section.
     '''
     for section in config.sections():
         section_dict = to_dict(config, section)
@@ -33,6 +34,7 @@ def parser_config(parser, config):
                 section_dict['action'] = cls
 
         parser.add_argument(*names, **section_dict)
+
 
 class FloatIntStrParserAction(argparse.Action):
     '''
