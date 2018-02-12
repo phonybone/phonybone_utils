@@ -179,7 +179,7 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
                 title = '>{}_{}_{}_{}'.format(span.chrom, span.gene, span.start, span.stop)
                 output.write('{}\n'.format(title))
                 output.write('{}\n'.format(seq_fa.strip()))
-
+                
 def create_fasta_fai(ref_fa, samtools):
     try:
         cmd = [samtools, 'faidx', ref_fa]

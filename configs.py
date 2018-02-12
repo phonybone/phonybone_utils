@@ -68,7 +68,7 @@ def load_attributes_from_config(obj, config, section, prepend_section=False):
             _store_range_float(obj, key, attrname, values)
         else:
             setattr(obj, attrname, values)
-
+            
 def _get_attrname(key, section, prepend_section):
     attrname = re.sub(r'_[is]values', '', key) # works for ints or strings (could work for floats, too)
     attrname = key.replace('_irange', '')
