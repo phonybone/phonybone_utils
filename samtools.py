@@ -131,6 +131,8 @@ class GeneSpan(SpanMixin):
         self.gene = self.gene + '-' + other.gene
         return self
 
+########################################################################
+
 def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
     ''' 
     Create amplicon .fasta from .bed file and a ref genome.
@@ -148,10 +150,6 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
 
     returns: None
     '''
-    if get_gene_name is None:
-        def get_gene_name(bline):
-            return bline[5].split(';')[0]
-            # return bline[4]
  
     chroms = {}
     with open(bed_fn) as bed:
@@ -176,6 +174,9 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name=None, flank_bp=0):
                 output.write('{}\n'.format(title))
                 output.write('{}\n'.format(seq_fa))
 
+
+
+########################################################################
 
 def create_fasta_fai(ref_fa, samtools):
     try:
