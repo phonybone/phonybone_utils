@@ -7,6 +7,7 @@ import inspect
 import pkg_resources as pr
 from files import package_fileres, replace_ext
 from configs import get_config, load_attributes_from_config, to_dict
+from strings import qw, ppjson
 
 def lazy(fn):
     attr_name = '__lazy_' + fn.__name__
@@ -61,11 +62,12 @@ class configured_class(object):
             '__pkg_root': pkg_root,
             }
         if self.defaults_fn is not None and self.def_sections is not None:
+            def_config = get_config(self.defaults_fn)
             for dsect in self.def_sections:
                 if not os.path.isabs(self.defaults_fn): # locate defaults_fn
                     self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
-                def_config = get_config(self.defaults_fn)
                 defaults.update(to_dict(def_config, dsect))
+                # print 'updated {} from section {}: {}'.format(cls.__name__, dsect, ppjson(to_dict(def_config, dsect)))
 
         # get class config and inject values:
         config_fn = os.path.join(os.path.dirname(clsfile), replace_ext(os.path.basename(clsfile), 'ini'))
