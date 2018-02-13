@@ -75,7 +75,25 @@ def get_mysql_cmdline(opts):
     if opts.d:
         print 'mysql connection: {}'.format(conn_args)
     return mysql.connector.connect(**conn_args)
-    
+
+def get_tables(dbh, db_name=None):
+    ''' return a list of tablenames for a given database '''
+    if db_name is None:
+        db_name = dbh.database
+
+    with get_cursor(dbh, buffered=True) as cursor:
+        # we can't use mysql string interpolation to ensure db_name isn't something nasty,
+        # so we check it against the list of existing databases:
+        sql = 'SHOW DATABASES'
+        cursor.execute(sql)
+        dbs = [t[0] for t in cursor]
+        if db_name not in dbs:
+            raise ValueError('no such database: {}'.format(db_name))
+
+        sql = 'SHOW TABLES FROM {}'.format(db_name)
+        cursor.execute(sql)
+        return [t[0] for t in cursor]
+
 def get_field_info(dbh, tablename):
     '''
     Returns:
