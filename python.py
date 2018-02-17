@@ -53,7 +53,7 @@ class configured_class(object):
     def __call__(self, cls):
         clsfile = inspect.getfile(cls)
         pkg = clsfile.split('.')[0]
-        pkg_root = os.path.abspath(pr.resource_filename('bed_file_service', '..'))
+        pkg_root = os.path.abspath(pr.resource_filename(__name__, '..'))
 
         # try to get default values from default config and section:
         defaults = {
@@ -61,6 +61,7 @@ class configured_class(object):
             '__module': cls.__module__,
             '__pkg_root': pkg_root,
             }
+        # print ppjson(defaults)
         if self.defaults_fn is not None and self.def_sections is not None:
             if not os.path.isabs(self.defaults_fn): # locate defaults_fn
                 self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
