@@ -79,7 +79,7 @@ def _get_attrname(key, section, prepend_section):
 
 def _store_values(obj, key, attrname, values_str, typ):
     ''' store a list of values as an attribute  '''
-#    attrname = re.sub(r'_[is]values', '', key) # works for ints or strings (could work for floats, too)
+    attrname = re.sub(r'_[is]values', '', key) # works for ints or strings (could work for floats, too) (also had been commented out)
     values = map(typ, re.split(r'[\s,]+', values_str))
     default = values.pop()
     setattr(obj, attrname, values)
@@ -87,7 +87,7 @@ def _store_values(obj, key, attrname, values_str, typ):
 
 def _store_range_int(obj, key, attrname, range_str):
     ''' store range (list) of ints as an attribute '''
-#    attrname = key.replace('_irange', '')
+    attrname = key.replace('_irange', '') # why had this been commented out??? (see ec.tests.chomper_profile.test_load_profile_gui_values)
     first, last, inc, default = map(int, re.split(r'[\s,]+', range_str))
     values = range(first, last+1, inc)
     setattr(obj, attrname, values)
@@ -96,7 +96,7 @@ def _store_range_int(obj, key, attrname, range_str):
 
 def _store_range_float(obj, key, attrname, range_str):
     ''' store range of floats as an attribute '''
-#    attrname = key.replace('_frange', '')
+    attrname = key.replace('_frange', '') # this was also commented out???
     first, last, inc, default = map(float, re.split(r'[\s,]+', range_str))
     if first >= last:
         raise ValueError('{} >= {}'.format(first, last))
