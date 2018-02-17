@@ -53,7 +53,7 @@ class configured_class(object):
     def __call__(self, cls):
         clsfile = inspect.getfile(cls)
         pkg = clsfile.split('.')[0]
-        pkg_root = os.path.abspath(pr.resource_filename('bed_file_service', '..'))
+        pkg_root = os.path.abspath(pr.resource_filename(__name__, '..'))
 
         # try to get default values from default config and section:
         defaults = {
