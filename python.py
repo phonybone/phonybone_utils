@@ -59,15 +59,18 @@ class configured_class(object):
             '__module': cls.__module__,
             '__pkg_root': pkg_root,
             }
-        # print ppjson(defaults)
         if self.defaults_fn is not None and self.def_sections is not None:
-            if not os.path.isabs(self.defaults_fn): # locate defaults_fn
+            if not os.path.isabs(self.defaults_fn):
+                # locate defaults_fn in same directory as class file
                 self.defaults_fn = os.path.join(os.path.dirname(clsfile), self.defaults_fn)
-            
+            else:
+                # locate defaults_fn in package root, unless it already points to a real file:
+                if not os.path.exists(self.defaults_fn):
+                    self.defaults_fn = os.path.join(pkg_root, self.defaults_fn[1:])
+
             def_config = get_config(self.defaults_fn)
             for dsect in self.def_sections:
                 defaults.update(to_dict(def_config, dsect))
-                # print 'updated {} from section {}: {}'.format(cls.__name__, dsect, ppjson(to_dict(def_config, dsect)))
 
         # get class config and inject values:
         config_fn = os.path.join(os.path.dirname(clsfile), replace_ext(os.path.basename(clsfile), 'ini'))

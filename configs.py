@@ -89,7 +89,8 @@ def _store_values(obj, key, attrname, values_str, typ):
     values = map(typ, re.split(r'[\s,]+', values_str))
     default = values.pop()
     setattr(obj, attrname, values)
-    setattr(obj, '{}_default'.format(attrname), default)
+    if default != 'NONE':
+        setattr(obj, '{}_default'.format(attrname), default)
 
 def _store_range_int(obj, key, attrname, range_str):
     ''' store range (list) of ints as an attribute '''
@@ -114,6 +115,10 @@ def _store_range_float(obj, key, attrname, range_str):
 
     setattr(obj, attrname, values)
     setattr(obj, '{}_default'.format(attrname), default)
+
+    
+
+
 #-----------------------------------------------------------------------
 
 
