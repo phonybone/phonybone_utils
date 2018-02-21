@@ -40,8 +40,6 @@ class configured_class(object):
     is an absolute path) and uses the section specified.
     '''
     def __init__(self, *args):
-        if len(args) == 1:
-            raise TypeError('bad args: must be 0 or >2: {}'.format(args))
         if len(args) >= 2:
             args = list(args)
             self.defaults_fn = args.pop(0)
@@ -53,7 +51,7 @@ class configured_class(object):
     def __call__(self, cls):
         clsfile = inspect.getfile(cls)
         pkg = clsfile.split('.')[0]
-        pkg_root = os.path.abspath(pr.resource_filename(__name__, '..'))
+        pkg_root = os.path.abspath(pr.resource_filename(__name__, '..')) # really???
 
         # try to get default values from default config and section:
         defaults = {
@@ -77,7 +75,6 @@ class configured_class(object):
         load_attributes_from_config(cls, cls_config, cls.__name__)
         return cls
         
-
 if __name__ == '__main__':
     def test_lazy():
         class Foo(object):
