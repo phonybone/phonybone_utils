@@ -14,6 +14,9 @@ from strings import ppjson, qw
 from span_mixin import SpanMixin
 from files import ensure_folder
 
+import logging
+log = logging.getLogger(__name__)
+
 def get_ref_ids(bamfile):
     ''' generator for sequence ids contained in the bamfile header '''
     return (h['SN'] for h in bamfile.header['SQ'])
@@ -134,7 +137,7 @@ class GeneSpan(SpanMixin):
 
 ########################################################################
 
-def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name, flank_bp=0):
+def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name, flank_bp=0, prepend_chr=False):
     ''' 
     Create amplicon .fasta from .bed file and a ref genome.
     
@@ -156,6 +159,10 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name, flank_bp=0):
         reader = csv.reader(bed, delimiter='\t')
         header = reader.next() # burn the header
         for bline in reader:
+            gene_name = get_gene_name(bline)
+            if gene_name is None:
+                log.debug('Cannot extract gene name from {}\nget_gene_name: {!r}'.format(bline, get_gene_name))
+                continue
             gene = GeneSpan(
                 chrom=bline[0],
                 start=int(bline[1]) - flank_bp,
@@ -165,12 +172,17 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name, flank_bp=0):
             chroms.setdefault(gene.chrom, []).append(gene)
 
     rx = re.compile(r'^chr(\d|1\d|2[012]|X|Y)$')
+    fixable = re.compile(r'^\d|1\d|2[012]|X|Y$') # ugh
+    
     with get_output_stream(ref_fa) as output:
         for chrom, genes in chroms.iteritems():
             genespans = SpanMixin.merge_overlapping(genes)
             for span in genespans:
                 if not re.match(rx, span.chrom):
-                    raise ValueError('bad chromosome name: {}'.format(span.chrom))
+                    if re.match(fixable, span.chrom):
+                        span.chrom = 'chr{}'.format(span.chrom)
+                    else:
+                        raise ValueError('bad chromosome name: {}'.format(span.chrom))
                 chrm_fa = os.path.join(ref_genome_dir, '{}.fa'.format(span.chrom))
                 seq_fa = fastasize(get_seq(chrm_fa, span.start, span.stop))
                 title = '>{}_{}_{}_{}'.format(span.chrom, span.gene, span.start, span.stop)
