@@ -19,7 +19,7 @@ def get_config(config_fn, defaults={}, config_type='Safe'):
     return config
 
 
-def inject_opts(config, opts, section='opts'):
+def inject_opts(config, opts, section='opts', coerce_strs=False):
     ''' 
     Add the contents of a NameSpace (opts) to a config section 
     Only works with RawConfigParsers; other types interpolate values, some times are not interpolatable (eg bool).
@@ -30,8 +30,14 @@ def inject_opts(config, opts, section='opts'):
         pass
 
     for opt, value in vars(opts).iteritems():
-        config.set(section, opt, value)
-
+        if coerce_strs:
+            try:
+                config.set(section, opt, value)
+            except TypeError:
+                config.set(section, opt, str(value))
+        else:
+            config.set(section, opt, value)
+            
 def to_dict(config, section):
     ''' convert a config section into a dict. '''
     return {k:v for k,v in config.items(section)}
