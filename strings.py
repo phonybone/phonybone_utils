@@ -104,7 +104,9 @@ if __name__ == '__main__':
     def test_qw():
         fodder = 'list, of, strings,   not,always, separated consistently'
         print qw(fodder)
+        print qw(fodder, '[\s,]+')
         print qw(fodder, re.compile('[\s,]+'))
         print qw(fodder, re.compile('s'))
+        print qw(fodder, 's')
     test_qw()
                  
