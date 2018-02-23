@@ -13,29 +13,6 @@ from mysql.connector.errors import Error as _MysqlError, OperationalError
 from dicts import hashsubset, to_dict
 from strings import ppjson, qw
 
-def create_everest_db(dbh, new_db, force, drop_db):
-    '''
-    Create a new everest database.
-    Grants all access permission to users everest_user and everest_admin.
-    
-    '''
-    with get_cursor(dbh) as cursor:
-        if drop_db:
-            do_sql(cursor, 'DROP DATABASE IF EXISTS {}'.format(new_db))
-            
-        sql = 'CREATE DATABASE IF NOT EXISTS {}'.format(new_db)
-        do_sql(cursor, sql)
-
-        sql = 'USE {}'.format(new_db)
-        do_sql(cursor, sql)
-        
-        for user in qw('everest_user everest_admin'):
-            sql = "GRANT ALL ON {}.* TO '{}'@'localhost'".format(new_db, user)
-            do_sql(cursor, sql)
-
-        sql = 'FLUSH PRIVILEGES'
-        do_sql(cursor, sql)
-
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
@@ -45,7 +22,7 @@ def get_mysql_from_config(config, section):
     mysql_args = hashsubset(to_dict(config, section), 'host', 'database', 'user', 'password')
     return get_mysql(**mysql_args)
 
-def get_mysql_cmdline(opts):
+def get_mysql_cmdline(opts, connect=False):
     ''' 
     Connect to a mysql database based on cmd-line options.  
     Also looks in ~/.my.cnf for missing values, args in opts have precedence.
@@ -71,10 +48,10 @@ def get_mysql_cmdline(opts):
                 except Exception as e:
                     print 'no password: {} {}'.format(type(e), e)
                     pass
-
-    if opts.d:
-        print 'mysql connection: {}'.format(conn_args)
-    return mysql.connector.connect(**conn_args)
+    if connect:
+        return get_mysql(**conn_args)
+    else:
+        return conn_args
 
 def get_tables(dbh, db_name=None):
     ''' return a list of tablenames for a given database '''
