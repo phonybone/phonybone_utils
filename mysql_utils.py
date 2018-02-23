@@ -29,10 +29,10 @@ def get_mysql_cmdline(opts, connect=False):
     opts is a Namespace object as returned by argparse.parse_args()
     '''
     conn_args = {}
-    for arg in ['host', 'db', 'user', 'password']:
+    for arg in ['host', 'database', 'user', 'password']:
         if hasattr(opts, arg):
             conn_args[arg] = getattr(opts, arg)
-
+    
     with open(os.path.join('/home', os.environ.get('USER'), '.my.cnf')) as f:
         config = ConfigParser.SafeConfigParser()
         config.readfp(f)
