@@ -69,10 +69,14 @@ class StringEncoder(json.JSONEncoder):
 def ppjson(data, indent=2):
     return json.dumps(data, indent=indent, cls=StringEncoder)
     
-def qw(s):
+def qw(s, rx=None):
     if s == '':
         return []
-    return s.split(' ')
+    if rx is not None:
+        rx = re.compile(rx)     # apparently one can safely re-compile regexes, so this handles strings and rx's...
+        return re.split(rx, s)
+    else:
+        return s.split(' ')
 
 if __name__ == '__main__':
     def test_ppjson():
@@ -95,5 +99,12 @@ if __name__ == '__main__':
 
         foo = Foo('fred', dt.datetime.now(), 3+2j)
         print 'foo: {}'.format(ppjson(foo))
+    #test_ppjson()
 
-    test_ppjson()
+    def test_qw():
+        fodder = 'list, of, strings,   not,always, separated consistently'
+        print qw(fodder)
+        print qw(fodder, re.compile('[\s,]+'))
+        print qw(fodder, re.compile('s'))
+    test_qw()
+                 
