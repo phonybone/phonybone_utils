@@ -10,9 +10,9 @@ log = logging.getLogger(__name__)
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from everest_core import testing_mode
-from everest_core.utils.dicts import hashsubset
-from everest_core.utils.strings import qw
-from everest_core.utils.configs import to_dict, get_config
+from dicts import hashsubset
+from strings import qw
+from configs import to_dict, get_config
 from contextlib import contextmanager
 
 # To install mysql connector (works on MacOSX, too):
@@ -72,3 +72,13 @@ def get_session(**session_args):
         raise
     finally:
         session.close()
+
+if __name__ == '__main__':
+    password = ''.join([chr(c) for c in [66, 115, 97, 52, 52, 49]])
+    sqlA_init(host='localhost', database='Everest', user='victor', password=password)
+    from everest_core.user_classes.user import User
+    from everest_core.user_classes.lab import Lab
+
+    with get_session() as session:
+        print '\n'.join([str(user) for user in session.query(User).all()])
+    print 'yay'
