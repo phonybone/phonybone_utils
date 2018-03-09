@@ -18,6 +18,14 @@ def get_config(config_fn, defaults={}, config_type='Safe'):
         raise RuntimeError("unable to read config file {}".format(config_fn))
     return config
 
+def merge_configs(dst_conf, src_conf, *sections):
+    ''' merge all of src_conf[*sections] into dst_conf '''
+    if len(sections) == 0:
+        sections = src_conf.sections()
+    for section in sections:
+        dst_conf.add_section(section)
+        for opt, value in src_conf.items(section):
+            dst_conf.set(section, opt, value)
 
 def inject_opts(config, opts, section='opts', coerce_strs=False):
     ''' 
@@ -129,3 +137,4 @@ def to_bool(value):
     if re.match(r'false', value, re.I):
         return False
     return bool(value)
+
