@@ -73,6 +73,10 @@ def get_session(**session_args):
     finally:
         session.close()
 
+def session_dbh(session):
+    return session.connection().connection.connection
+
+
 if __name__ == '__main__':
     password = ''.join([chr(c) for c in [66, 115, 97, 52, 52, 49]])
     sqlA_init(host='localhost', database='Everest', user='victor', password=password)
