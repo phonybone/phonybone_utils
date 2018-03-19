@@ -155,13 +155,14 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name, flank_bp=0, prepen
     returns: None
     '''
     chroms = {}
+    errors = []
     with open(bed_fn) as bed:
         reader = csv.reader(bed, delimiter='\t')
         header = reader.next() # burn the header
         for bline in reader:
             gene_name = get_gene_name(bline)
             if gene_name is None:
-                log.debug('Cannot extract gene name from {}\nget_gene_name: {!r}'.format(bline, get_gene_name))
+                errors.append('Cannot extract gene name from {}\nget_gene_name: {!r}'.format(bline, get_gene_name))
                 continue
             gene = GeneSpan(
                 chrom=bline[0],
@@ -188,6 +189,8 @@ def bed2ref_fa(bed_fn, ref_fa, ref_genome_dir, get_gene_name, flank_bp=0, prepen
                 title = '>{}_{}_{}_{}'.format(span.chrom, span.gene, span.start, span.stop)
                 output.write('{}\n'.format(title))
                 output.write('{}\n'.format(seq_fa.strip()))
+
+    return errors
                 
 ########################################################################
 
