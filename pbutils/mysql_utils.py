@@ -43,11 +43,9 @@ def get_mysql_cmdline(opts, connect=False):
                 except Exception as e:
                     pass
             if 'password' not in conn_args or not conn_args['password']:
-                try:
+                if config.has_option('mysql', 'password'):
                     conn_args['password'] = config.get('mysql', 'password')
-                except Exception as e:
-                    print 'no password: {} {}'.format(type(e), e)
-                    pass
+
     if connect:
         return get_mysql(**conn_args)
     else:
