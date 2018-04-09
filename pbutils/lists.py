@@ -17,6 +17,8 @@ def flatten(l):
     # see https://stackoverflow.com/questions/10632839/python-transform-list-of-tuples-in-to-1-flat-list-or-1-matrix
     return list(sum(l, ()))
 
+
+
 if __name__ == '__main__':
     from strings import ppjson, qw
     def test_grow_to():
