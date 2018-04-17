@@ -17,10 +17,9 @@ def flatten(l):
     # see https://stackoverflow.com/questions/10632839/python-transform-list-of-tuples-in-to-1-flat-list-or-1-matrix
     return list(sum(l, ()))
 
-
-
 if __name__ == '__main__':
     from strings import ppjson, qw
+    
     def test_grow_to():
         lol = [[] for _ in xrange(3)]
         assert(len(lol) == 3)
@@ -43,8 +42,6 @@ if __name__ == '__main__':
         assert l6 is lol[5]
 
     def test_merge_overlapping():
-
-        
         data = (
             ((1, 5), (4, 8)),
             ((23, 34), (43, 48), (48, 52), (51, 59), (62, 67)),
@@ -68,7 +65,8 @@ if __name__ == '__main__':
             print ppjson('exp_d: {}'.format(exp_d))
             assert new_l == exp_d, "{} != {}".format(new_l, exp_d)
             print
-    test_merge_overlapping()
+    #test_merge_overlapping()
+
     print 'yay'
     
     
