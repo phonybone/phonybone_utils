@@ -16,6 +16,7 @@ import tempfile
 from StringIO import StringIO
 from ConfigParser import ConfigParser
 
+from pbutils.strings import ppjson
 
 def coroutine_closure(*a, **kw):
     '''
@@ -31,7 +32,7 @@ def coroutine_closure(*a, **kw):
     return decor
 
 
-def read_perl_config_ini(self, ini_file, dummy_section='_dummy_'):):
+def read_perl_config_ini(ini_file, dummy_section='_DEFAULT_'):
     ''' 
     Return a ConfigParser() object from a perl config::inifiles type file.
     Basic differences:
@@ -44,7 +45,7 @@ def read_perl_config_ini(self, ini_file, dummy_section='_dummy_'):):
     key, endkey = False, False
     multiline_value = ''
     multiline_assignment_rx = re.compile('^(\w+)=<<(\w+)')
-    section_header_rx = re.compile(r'\[(\w+)\]')
+    section_header_rx = re.compile(r'\[([\w_]+)\]')
 
     fio = StringIO()
     @coroutine_closure(fio)
@@ -88,20 +89,20 @@ def read_perl_config_ini(self, ini_file, dummy_section='_dummy_'):):
     tmp = tempfile.TemporaryFile()
     tmp.write(fio.getvalue())
     tmp.seek(0, 0)
-
-    # create ConfigParser from fio:
     conf =  ConfigParser()
     conf.readfp(tmp)
+
     return conf
 
-def __strip_comments(self, line):
+def __strip_comments(line):
     idx = line.find('#')
     if idx >= 0:
         return line[:idx]
     else:
         return line
 
-def write_perl_config_ini(self, conf, conf_fn, dummy_section=None):
+def write_perl_config_ini(conf, fp, dummy_section=None):
+
     def _write_section(fp, conf, section, is_dummy_section=False):
         if not is_dummy_section:
             fp.write('[{}]\n'.format(section))
@@ -111,30 +112,38 @@ def write_perl_config_ini(self, conf, conf_fn, dummy_section=None):
             fp.write('{}={}\n'.format(key, value))
         fp.write('\n')
 
-    with open(conf_fn, 'w') as fp:
-        if dummy_section is not None:
-            _write_section(fp, conf, dummy_section, is_dummy_section=True)
+    if dummy_section is not None and conf.has_section(dummy_section):
+        _write_section(fp, conf, dummy_section, is_dummy_section=True)
 
-        for section in conf.sections():
-            if section == dummy_section:
-                continue
-            _write_section(fp, conf, section)
+    for section in conf.sections():
+        if section == dummy_section:
+            continue
+        _write_section(fp, conf, section)
 
 if __name__=='__main__':
+    from pbutils.streams import get_output_stream
+    
     def main(opts):
+        '''
+        Read in a perl-style config::inifiles file, write it back out
+        '''
         config = read_perl_config_ini(opts.ini_file)
         print("{} Sections".format(len(config.sections())))
+        print('[ffpe]: {}'.format(ppjson(dict(config.items('ffpe')))))
 
-        out_fn = opts.ini_file + '.bak'
-        write_perl_config_ini(config, out_fn, dummy_section='_dummy_')
-        print('{} written'.format(out_fn))
+        # out_fn = opts.ini_file + '.bak'
+        # with get_output_stream('-') as fp:
+        #     write_perl_config_ini(config, fp)
+        #with open(out_fn, 'w') as fp:
+        
+            # print('{} written'.format(out_fn))
 
     def getopts():
         import argparse
         from argparse import RawTextHelpFormatter # Note: this applies to all options, might not always be what we want...
         parser = argparse.ArgumentParser(description=__doc__, formatter_class=RawTextHelpFormatter)
         parser.add_argument('ini_file')
-        parser.add_argument('--some_arg', default='some arg')
+
         parser.add_argument('-v', action='store_true', help='verbose')
         parser.add_argument('-d', action='store_true', help='debugging flag')
         # parser.add_argument('args', nargs=argparse.REMAINDER)
