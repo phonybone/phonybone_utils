@@ -1,6 +1,7 @@
 '''
 Utility functions related to general-purpose python.
 '''
+import sys
 import os
 import importlib
 import inspect
@@ -50,8 +51,10 @@ class configured_class(object):
 
     def __call__(self, cls):
         clsfile = inspect.getfile(cls)
-        pkg = clsfile.split('.')[0]
-        pkg_root = os.path.abspath(pr.resource_filename(__name__, '..')) # really???
+        mod = inspect.getmodule(cls)
+        pkg = mod.__name__.split('.')[0]
+        pkg_root = os.path.abspath(pr.resource_filename(pkg, '.'))
+
 
         # try to get default values from default config and section:
         defaults = {
@@ -67,7 +70,6 @@ class configured_class(object):
                 # locate defaults_fn in package root, unless it already points to a real file:
                 if not os.path.exists(self.defaults_fn):
                     self.defaults_fn = os.path.join(pkg_root, self.defaults_fn[1:])
-
             def_config = get_config(self.defaults_fn)
             for dsect in self.def_sections:
                 defaults.update(to_dict(def_config, dsect))
@@ -77,7 +79,7 @@ class configured_class(object):
         cls_config = get_config(config_fn, defaults=defaults)
         load_attributes_from_config(cls, cls_config, cls.__name__)
         return cls
-        
+
 if __name__ == '__main__':
     def test_lazy():
         class Foo(object):
