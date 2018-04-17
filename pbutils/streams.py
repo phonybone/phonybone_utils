@@ -1,7 +1,9 @@
 import sys, os
+import re
 from contextlib import contextmanager
 import subprocess
 
+from pbutils.strings import qw
 
 @contextmanager
 def get_output_stream(filename, mode='w', verbose_stream=None):
@@ -96,3 +98,68 @@ def do_pipe(cmds):
             f.write(output)
             
     return pipes, output
+
+def gather_input(prompts):
+    ''' Loop over prompts using raw_input; fill in the fields '''
+    _rx = re.compile(' ')
+    
+    def _get_value(key, info):
+        prompt = info.get('prompt', 'Enter {}'.format(key))
+        while True:
+            value = raw_input('{}: '.format(prompt))
+            if 'validate' in info:
+                validate = info['validate']
+                if isinstance(validate, list):
+                    if value in validate:
+                        info['value'] = value
+                        return
+
+                elif type(validate) is type(_rx):
+                    try:
+                        mg = validate.search(value)
+                        if mg:
+                            info['value'] = value
+                            return
+                    except KeyboardInterrupt:
+                        raise
+                    except Exception as e:
+                        print e
+                        continue
+
+                elif callable(validate):
+                    try:
+                        info['value'] = validate(value)
+                        return
+                    except KeyboardInterrupt:
+                        raise
+                    except Exception as e:
+                        print e
+                        continue
+                else:
+                    raise RuntimeError("Don't know how to validate {} using {} (type={})".format(key, validate, type(validate)))
+                
+            else:               # no validation info given
+                info['value'] = value
+                return
+            print('unable to validate {}; try again'.format(value))
+            if 'validation_help' in info:
+                print info['validation_help']
+                
+    for key, info in prompts.iteritems():
+        if 'value' not in info:
+            _get_value(key, info)
+
+if __name__ == '__main__':
+    def test_gather_input():
+        from collections import OrderedDict
+        prompts = OrderedDict()
+        prompts['name'] = {'prompt': 'Give me a name', 'validate': str}
+        prompts['age'] = {'validate': int}
+        prompts['email'] = {'validate': re.compile('[\w.]+@[\w.]+\.(com|org|net|edu|co)'), 'validation_help': 'not a valid email address'}
+        prompts['color'] = {'validate': qw('red blue yellow'), 'validation_help': 'Must be one of red, blue, or yellow'}
+        try:
+            gather_input(prompts)
+            for key, info in prompts.iteritems():
+                print('{}: {}'.format(key, info['value']))
+        except EOFError:
+            print('never mind')
