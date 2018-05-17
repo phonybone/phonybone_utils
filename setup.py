@@ -1,4 +1,12 @@
+import sys
 from setuptools import setup, find_packages
+
+deps = ['mysql', 'sqlalchemy']
+if sys.version_info[0] == 2:
+    deps += ['ConfigParser']
+elif sys.version_info[0] == 3:
+    deps += ['configparser']
+
 setup(
     name="phonybone_utils",
     version="0.1",
@@ -7,7 +15,7 @@ setup(
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
-    install_requires=['mysql_connector', 'ConfigParser', 'sqlalchemy'],
+    install_requires=deps,
 
     # package_data={
     #     # If any package contains *.txt or *.rst files, include them:
