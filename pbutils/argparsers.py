@@ -1,11 +1,8 @@
 import argparse
-
-from configs import get_config, to_dict
-from strings import qw, ppjson
 from importlib import import_module
 
-
-
+from .configs import get_config, to_dict
+from .strings import qw, ppjson
 
 def parser_config(parser, config):
     ''' 
@@ -83,7 +80,7 @@ if __name__=='__main__':
         opts=parser.parse_args()
         if opts.d:
             os.environ['DEBUG'] = 'True'
-            print ppjson(vars(opts))
+            print(ppjson(vars(opts)))
         return opts
 
 

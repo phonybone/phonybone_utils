@@ -22,17 +22,17 @@ def groupBy(it, f=None):
 
 if __name__=='__main__':
     gc=groupCount(range(100), lambda x : x % 5)
-    print gc
+    print(gc)
 
     gc=groupCount('this is a string with some duplicates in the string is a string some some this'.split(' '))
-    print gc
+    print(gc)
 
     gc=groupBy(range(100), lambda x : x % 5)
-    print gc
+    print(gc)
 
     gc=groupBy('this is a string with some duplicates in the string is a string some some this'.split(' '),
                lambda s : len(s)
     )
-    print gc
+    print(gc)
 
 

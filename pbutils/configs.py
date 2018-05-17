@@ -1,8 +1,12 @@
+import sys
 import os
-import ConfigParser as CP
+if sys.version_info[0] == 2:
+    import ConfigParser as CP
+elif sys.version_info[1] == 3:
+    import configparser as CP
 import re
 
-from strings import qw
+from .strings import qw
 
 def get_config(config_fn, defaults={}, config_type='Safe'):
     '''

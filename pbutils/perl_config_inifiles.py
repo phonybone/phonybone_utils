@@ -13,8 +13,12 @@ import sys
 import os
 import re
 import tempfile
-from StringIO import StringIO
-from ConfigParser import ConfigParser
+if sys.version_info[0] == 2:
+    from StringIO import StringIO
+    from ConfigParser import ConfigParser
+elif sys.version_info[0] == 3:
+    from io import StringIO
+    from configparser import ConfigParser
 
 from pbutils.strings import ppjson
 
@@ -151,7 +155,7 @@ if __name__=='__main__':
         opts=parser.parse_args()
         if opts.d:
             os.environ['DEBUG'] = 'True'
-            print opts
+            print(opts)
         return opts
         
 
@@ -167,5 +171,5 @@ if __name__=='__main__':
             import traceback
             traceback.print_exc()
         else:
-            print 'error: {} {}'.format(type(e), e)
+            print('error: {} {}'.format(type(e), e))
         sys.exit(1)

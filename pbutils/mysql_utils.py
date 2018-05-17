@@ -2,17 +2,20 @@ import sys
 import os
 import copy
 import datetime
-import md5
+if sys.version_info[0] == 2:
+    import md5
+elif sys.version_info[0] == 3:
+    from hashlib import md5
 import mysql.connector
 from contextlib import contextmanager
-import ConfigParser
+
 import sqlalchemy as sa
 import multiprocessing as mp
 from mysql.connector.errors import Error as _MysqlError, OperationalError
 
-from dicts import hashsubset, to_dict
-from strings import ppjson, qw
-
+from .dicts import hashsubset, to_dict
+from .strings import ppjson, qw
+from .configs import get_config
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
@@ -32,19 +35,17 @@ def get_mysql_cmdline(opts, connect=False):
     for arg in ['host', 'database', 'user', 'password']:
         if hasattr(opts, arg):
             conn_args[arg] = getattr(opts, arg)
-    
-    with open(os.path.join('/home', os.environ.get('USER'), '.my.cnf')) as f:
-        config = ConfigParser.SafeConfigParser()
-        config.readfp(f)
-        if config.has_section('mysql'):
-            if 'user' not in conn_args or not conn_args['user']:
-                try:
-                    conn_args['user'] = config.get('mysql', 'user')
-                except Exception as e:
-                    pass
-            if 'password' not in conn_args or not conn_args['password']:
-                if config.has_option('mysql', 'password'):
-                    conn_args['password'] = config.get('mysql', 'password')
+
+    config = get_config(os.path.join(os.environ.get('HOME'), '.my.cnf'))
+    if config.has_section('mysql'):
+        if 'user' not in conn_args or not conn_args['user']:
+            try:
+                conn_args['user'] = config.get('mysql', 'user')
+            except Exception as e:
+                pass
+        if 'password' not in conn_args or not conn_args['password']:
+            if config.has_option('mysql', 'password'):
+                conn_args['password'] = config.get('mysql', 'password')
 
     if connect:
         return get_mysql(**conn_args)

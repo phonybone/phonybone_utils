@@ -24,15 +24,15 @@ if __name__ == '__main__':
         lol = [[] for _ in xrange(3)]
         assert(len(lol) == 3)
         l6 = grow_to(lol, 6, list)
-        print 'lol: {}'.format(lol)
-        print 'l6: {}'.format(l6)
+        print('lol: {}'.format(lol))
+        print('l6: {}'.format(l6))
         assert(len(lol) == 6)
         assert(all(map(lambda l: type(l) is list, lol)))
         assert(len(l6) == 0)
 
         lol[0].extend(['fred', 'wilma', 'pebbles', 'dino'])
         lol[5].extend(['betty', 'barney', 'bambam'])
-        print 'lol: {}'.format(lol)
+        print('lol: {}'.format(lol))
         assert(len(lol[0]) == 4)
         for l in lol[1:5]:
             assert(len(l) == 0)
@@ -61,12 +61,12 @@ if __name__ == '__main__':
         for datum, exp_d in zip(data, expected):
             new_l = merge_overlapping(datum, ovlp, mrg)
             exp_d = set(exp_d)
-            print ppjson('new_l: {}'.format(new_l))
-            print ppjson('exp_d: {}'.format(exp_d))
+            print(ppjson('new_l: {}'.format(new_l)))
+            print(ppjson('exp_d: {}'.format(exp_d)))
             assert new_l == exp_d, "{} != {}".format(new_l, exp_d)
-            print
+            print()
     #test_merge_overlapping()
 
-    print 'yay'
+    print('yay')
     
     

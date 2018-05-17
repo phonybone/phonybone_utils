@@ -16,7 +16,7 @@ if __name__ == '__main__':
     fn = 'array.py'
     with open(fn) as f:
         for record in delimited(f, '\n\n'):
-            print record
-            print '-' * 72
+            print(record)
+            print('-' * 72)
             
 # references: http://stackoverflow.com/questions/19600475/how-to-read-records-terminated-by-custom-separator-from-file-in-python

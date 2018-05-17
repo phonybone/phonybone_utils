@@ -15,5 +15,5 @@ if __name__ == '__main__':
     fuse = Fuse(int(sys.argv[1]))
 
     while not fuse.boom():
-        print 'not yet'
-    print 'boom'
+        print('not yet')
+    print('boom')

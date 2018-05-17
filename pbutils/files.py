@@ -66,10 +66,10 @@ def truncate(fn):
 if __name__=='__main__':
     path = '/usr/local/everest/data/var/UserData/Victor/Reads/LB5025/LB5025germline_PG0-718_LB4852V_rename.fastq'
     # for units in 'auto bytes kb mb gb pb'.split(' '):
-    #     print 'answer: {}\n'.format(get_size(path, units))
+    #     print('answer: {}\n'.format(get_size(path, units)))
 
-    print replace_ext(path, 'fq')
-    print replace_ext('/usr/local/bin', 'txt')
-    print replace_ext('/usr/local/bin/fart.html', 'txt')
-    print replace_ext('/usr/local/bin/fart.orig.html', 'txt')
-    print replace_ext('/', '.bin')
+    print(replace_ext(path, 'fq'))
+    print(replace_ext('/usr/local/bin', 'txt'))
+    print(replace_ext('/usr/local/bin/fart.html', 'txt'))
+    print(replace_ext('/usr/local/bin/fart.orig.html', 'txt'))
+    print(replace_ext('/', '.bin'))

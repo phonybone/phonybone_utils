@@ -7,13 +7,12 @@ All classes used by our SqlAlchemy utilization are defined here.
 import logging
 log = logging.getLogger(__name__)
 
+from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from everest_core import testing_mode
-from dicts import hashsubset
-from strings import qw
-from configs import to_dict, get_config
-from contextlib import contextmanager
+from .dicts import hashsubset
+from .strings import qw
+from .configs import to_dict, get_config
 
 # To install mysql connector (works on MacOSX, too):
 # pip install mysql-connector-python-rf
@@ -51,8 +50,6 @@ def sqlA_init(host, database, user, password):
 
 
 def get_SqlA_mysql_engine(host, database, user, password):
-    if testing_mode() and not database.endswith('_dev'):
-        database = '{}_dev'.format(database) # really the best place for this code????
     eng_str = 'mysql+mysqlconnector://{user}:{password}@{host}/{database}'.format(
         user=user, password=password, host=host, database=database)
     return create_engine(eng_str)
@@ -84,5 +81,5 @@ if __name__ == '__main__':
     from everest_core.user_classes.lab import Lab
 
     with get_session() as session:
-        print '\n'.join([str(user) for user in session.query(User).all()])
-    print 'yay'
+        print('\n'.join([str(user) for user in session.query(User).all()]))
+    print('yay')

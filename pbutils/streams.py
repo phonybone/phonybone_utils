@@ -123,7 +123,7 @@ def gather_input(prompts):
                     except KeyboardInterrupt:
                         raise
                     except Exception as e:
-                        print e
+                        print(e)
                         continue
 
                 elif callable(validate):
@@ -133,7 +133,7 @@ def gather_input(prompts):
                     except KeyboardInterrupt:
                         raise
                     except Exception as e:
-                        print e
+                        print(e)
                         continue
                 else:
                     raise RuntimeError("Don't know how to validate {} using {} (type={})".format(key, validate, type(validate)))
@@ -143,7 +143,7 @@ def gather_input(prompts):
                 return
             print('unable to validate {}; try again'.format(value))
             if 'validation_help' in info:
-                print info['validation_help']
+                print(info['validation_help'])
                 
     for key, info in prompts.iteritems():
         if 'value' not in info:

@@ -6,9 +6,9 @@ import os
 import importlib
 import inspect
 import pkg_resources as pr
-from files import package_fileres, replace_ext
-from configs import get_config, load_attributes_from_config, to_dict
-from strings import qw, ppjson
+from .files import package_fileres, replace_ext
+from .configs import get_config, load_attributes_from_config, to_dict
+from .strings import qw, ppjson
 
 def lazy(fn):
     attr_name = '__lazy_' + fn.__name__
@@ -85,11 +85,11 @@ if __name__ == '__main__':
         class Foo(object):
             @lazy
             def foo(self):
-                print 'calculating foo...'
+                print('calculating foo...')
                 return 'foo'
 
         foo = Foo()
-        print dir(foo)
-        print foo.foo
-        print dir(foo)
-        print foo.foo
+        print(dir(foo))
+        print(foo.foo)
+        print(dir(foo))
+        print(foo.foo)

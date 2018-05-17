@@ -98,15 +98,15 @@ if __name__ == '__main__':
 
 
         foo = Foo('fred', dt.datetime.now(), 3+2j)
-        print 'foo: {}'.format(ppjson(foo))
+        print('foo: {}'.format(ppjson(foo)))
     #test_ppjson()
 
     def test_qw():
         fodder = 'list, of, strings,   not,always, separated consistently'
-        print qw(fodder)
-        print qw(fodder, '[\s,]+')
-        print qw(fodder, re.compile('[\s,]+'))
-        print qw(fodder, re.compile('s'))
-        print qw(fodder, 's')
+        print(qw(fodder))
+        print(qw(fodder, '[\s,]+'))
+        print(qw(fodder, re.compile('[\s,]+')))
+        print(qw(fodder, re.compile('s')))
+        print(qw(fodder, 's'))
     test_qw()
                  

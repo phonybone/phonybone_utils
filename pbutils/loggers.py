@@ -13,7 +13,7 @@ def create_module_logger(mod_name,
         module = sys.modules[mod_name]
         mod_dir = os.path.dirname(module.__file__)
         filename = os.path.abspath(os.path.join(mod_dir, '{}.log'.format(module.__name__)))
-        print 'filename: {}'.format(filename)
+        print('filename: {}'.format(filename))
 
     logger = logging.getLogger(mod_name)
     logger.propegate = False
@@ -31,8 +31,8 @@ def create_module_logger(mod_name,
 
 if __name__ == '__main__':
     #mod = sys.modules['loggers']
-    print 'name: {}'.format(__name__)
-    #print 'mod: {}'.format(mod)
+    print('name: {}'.format(__name__))
+    #print('mod: {}'.format(mod))
     log = create_module_logger(__name__, mode='a')
     log.debug('Hi from {}'.format(__name__))
               
