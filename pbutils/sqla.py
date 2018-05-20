@@ -7,12 +7,18 @@ All classes used by our SqlAlchemy utilization are defined here.
 import logging
 log = logging.getLogger(__name__)
 
+import sys
+PYTHON2 = sys.version_info[0] == 2
+PYTHON3 = sys.version_info[0] == 3
+assert PYTHON2 or PYTHON3
+
+
 from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from .dicts import hashsubset
-from .strings import qw
-from .configs import to_dict, get_config
+from pbutils.dicts import hashsubset
+from pbutils.strings import qw
+from pbutils.configs import to_dict, get_config
 
 # To install mysql connector (works on MacOSX, too):
 # pip install mysql-connector-python-rf
@@ -27,14 +33,13 @@ engine = None
 def sqlA_init_from_config_fn(config_fn, section):
     '''
     Extract db connection information from config/section.  The following keys must be present in the config section:
-    host, shared_database, user, password
+    host, database, user, password
     '''
     config = get_config(config_fn)
     return sqlA_init_from_config(config, section)
 
 def sqlA_init_from_config(config, section):
-    conn_args = hashsubset(to_dict(config, section), *qw('host shared_database user password'))
-    conn_args['database'] = conn_args.pop('shared_database')
+    conn_args = hashsubset(to_dict(config, section), *qw('host database user password'))
     return sqlA_init(**conn_args)
 
 def sqlA_init(host, database, user, password):
@@ -50,8 +55,12 @@ def sqlA_init(host, database, user, password):
 
 
 def get_SqlA_mysql_engine(host, database, user, password):
-    eng_str = 'mysql+mysqlconnector://{user}:{password}@{host}/{database}'.format(
-        user=user, password=password, host=host, database=database)
+    if PYTHON2:
+        dialect = 'mysql+mysqlconnector'
+    elif PYTHON3:
+        dialect = 'mysql+pymysql'
+    eng_str = '{dialect}://{user}:{password}@{host}/{database}'.format(
+        dialect=dialect, user=user, password=password, host=host, database=database)
     return create_engine(eng_str)
 
 @contextmanager
