@@ -1,11 +1,12 @@
 import sys
 from setuptools import setup, find_packages
 
-deps = ['mysql', 'sqlalchemy']
+deps = ['sqlalchemy']
 if sys.version_info[0] == 2:
-    deps += ['ConfigParser']
+    deps += ['mysql', 'mysql-connector', 'ConfigParser']
 elif sys.version_info[0] == 3:
-    deps += ['configparser']
+    deps += ['pymysql', 'configparser']
+print('deps: {}'.format(deps))
 
 setup(
     name="phonybone_utils",
