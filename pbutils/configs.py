@@ -1,12 +1,13 @@
 import sys
 import os
+import re
+from builtins import dict
+from future.utils import iteritems
+
 if sys.version_info[0] == 2:
     import ConfigParser as CP
-elif sys.version_info[1] == 3:
+elif sys.version_info[0] == 3:
     import configparser as CP
-import re
-
-from .strings import qw
 
 def get_config(config_fn, defaults={}, config_type='Safe'):
     '''
@@ -34,14 +35,14 @@ def merge_configs(dst_conf, src_conf, *sections):
 def inject_opts(config, opts, section='opts', coerce_strs=False):
     ''' 
     Add the contents of a NameSpace (opts) to a config section 
-    Only works with RawConfigParsers; other types interpolate values, some times are not interpolatable (eg bool).
+    Only works with RawConfigParsers; other types interpolate values, sometimes are not interpolatable (eg bool).
     '''
     try:
         config.add_section(section)
     except CP.DuplicateSectionError:
         pass
 
-    for opt, value in vars(opts).iteritems():
+    for opt, value in iteritems(vars(opts)):
         if coerce_strs:
             try:
                 config.set(section, opt, value)
@@ -74,7 +75,7 @@ def load_attributes_from_config(obj, config, section, prepend_section=False):
     If option name ends in '_frange', value is assumed to be a range of floats defined by first, last, step, default;
     '''
     profile_values = to_dict(config, section)
-    for key, values in profile_values.iteritems():
+    for key, values in iteritems(profile_values):
         attrname = _get_attrname(key, section, prepend_section)
         if key.endswith('_svalues'):
             _store_values(obj, key, attrname, values, str)

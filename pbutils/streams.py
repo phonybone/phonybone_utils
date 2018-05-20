@@ -2,6 +2,7 @@ import sys, os
 import re
 from contextlib import contextmanager
 import subprocess
+from future.utils import iteritems
 
 from pbutils.strings import qw
 
@@ -145,7 +146,7 @@ def gather_input(prompts):
             if 'validation_help' in info:
                 print(info['validation_help'])
                 
-    for key, info in prompts.iteritems():
+    for key, info in iteritems(prompts):
         if 'value' not in info:
             _get_value(key, info)
 
@@ -159,7 +160,7 @@ if __name__ == '__main__':
         prompts['color'] = {'validate': qw('red blue yellow'), 'validation_help': 'Must be one of red, blue, or yellow'}
         try:
             gather_input(prompts)
-            for key, info in prompts.iteritems():
+            for key, info in iteritems(prompts):
                 print('{}: {}'.format(key, info['value']))
         except EOFError:
             print('never mind')

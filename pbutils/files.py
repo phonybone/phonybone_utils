@@ -3,6 +3,7 @@ import time
 import errno
 from collections import OrderedDict
 import pkg_resources as pr
+from future.utils import iteritems
 
 def get_size(path, units='auto'):
     ''' Return a user-friendly, auto-scaled string representation of the size of a file. '''
@@ -24,7 +25,7 @@ def get_size(path, units='auto'):
         size = raw_size/divisor
     except KeyError:
         # didn't recognize requested units, find first answer that prints in 3 decimal places
-        for units, divisor in divisors.iteritems():
+        for units, divisor in iteritems(divisors):
             size = raw_size/divisor
             if len(str(size)) <= 4:
                 break
