@@ -10,10 +10,10 @@ def duration(t):
     hpd=24
     dpy=365
 
-    years, rem=divmod(t, dpy*hpd*mph*spm)
-    days, rem=divmod(rem,    hpd*mph*spm)
-    hours, rem=divmod(rem,       mph*spm)
-    mins, secs=divmod(rem,           spm)
+    years, rem=divmod(t,  dpy*hpd*mph*spm)
+    days,  rem=divmod(rem,    hpd*mph*spm)
+    hours, rem=divmod(rem,        mph*spm)
+    mins,  secs=divmod(rem,           spm)
 
     answer=''
     if years:
