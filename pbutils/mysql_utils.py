@@ -2,16 +2,22 @@ import sys
 import os
 import copy
 import datetime
-if sys.version_info[0] == 2:
-    import md5
-elif sys.version_info[0] == 3:
-    from hashlib import md5
-import mysql.connector
 from contextlib import contextmanager
-
 import sqlalchemy as sa
 import multiprocessing as mp
-from mysql.connector.errors import Error as _MysqlError, OperationalError
+
+PYTHON2 = sys.version_info[0] == 2
+PYTHON3 = sys.version_info[0] == 3
+assert PYTHON2 or PYTHON3
+
+if PYTHON2:
+    import md5
+    import mysql.connector
+    from mysql.connector.errors import Error as _MysqlError, OperationalError
+elif PYTHON3:
+    from hashlib import md5
+    import pymysql as mysql
+    from pymysql.err import OperationalError
 
 from .dicts import hashsubset, to_dict
 from .strings import ppjson, qw
@@ -19,7 +25,10 @@ from .configs import get_config
 
 def get_mysql(host, database, user, password):
     ''' Connect to a mysql database. '''
-    return mysql.connector.connect(host=host, database=database, user=user, password=password)
+    if PYTHON2:
+        return mysql.connector.connect(host=host, database=database, user=user, password=password)
+    elif PYTHON3:
+        return mysql.connect(host=host, database=database, user=user, password=password)
 
 def get_mysql_from_config(config, section):
     mysql_args = hashsubset(to_dict(config, section), 'host', 'database', 'user', 'password')
@@ -52,10 +61,18 @@ def get_mysql_cmdline(opts, connect=False):
     else:
         return conn_args
 
+def get_database(dbh):
+    ''' return the name of the database to which we're connected as a str() '''
+    if PYTHON2:
+        return dbh.database
+    elif PYTHON3:
+        return dbh.db.decode()
+    
+
 def get_tables(dbh, db_name=None):
     ''' return a list of tablenames for a given database '''
     if db_name is None:
-        db_name = dbh.database
+        db_name = get_database(dbh)
 
     with get_cursor(dbh, buffered=True) as cursor:
         # we can't use mysql string interpolation to ensure db_name isn't something nasty,
@@ -80,7 +97,7 @@ def get_field_info(dbh, tablename):
     # get all the field names from the table:
 
     with get_cursor(dbh) as cursor:
-        cursor.execute("SHOW COLUMNS FROM {}.{}".format(dbh.database, tablename))
+        cursor.execute("SHOW COLUMNS FROM {}.{}".format(get_database(dbh), tablename))
         obj_fields = []    # contains list of field names
         column_info = {}   # contains dict of field info as derived from "SHOW COLUMNS"
         primary_key = None
@@ -126,14 +143,20 @@ def mysql_t2t(mytype):
     else:
         raise ValueError("unknown mysql type '{}'".format(mytype))
     
+
+def _get_cursor(dbh, **cursor_args):
+    if PYTHON2:
+        return dbh.cursor(**cursor_args)
+    elif PYTHON3:
+        return dbh.cursor()
         
 @contextmanager
 def get_cursor(dbh, **cursor_args):
-    if type(dbh) is not mysql.connector.connection.MySQLConnection:
-        raise TypeError(dbh)
+    # if type(dbh) is not mysql.connector.connection.MySQLConnection:
+    #     raise TypeError(dbh)
     try:
         try:
-            cursor = dbh.cursor(**cursor_args)
+            cursor = _get_cursor(dbh, **cursor_args)
         except OperationalError as e:
             # reconnect and try again
             dbh.reconnect()
