@@ -20,7 +20,7 @@ def expand_range_list(src):
     If src="1,2,5,6-9, 11, 14 - 15", then the list
     [1,2,5,6,7,8,9,11,14,15] is returned.
 
-    Note that although the example above is sorted, no such requirements are imposed or 
+    Note that although the example above is sorted, no such requirements are imposed or
     considered by this function.
     '''
 
