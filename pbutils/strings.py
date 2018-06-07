@@ -24,6 +24,7 @@ def expand_range_list(src):
     considered by this function.
     '''
 
+    
     # Strip all whitespace:
     src = re.sub(r'\s+', '', src)
     ranges = []
