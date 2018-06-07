@@ -23,7 +23,6 @@ def expand_range_list(src):
     Note that although the example above is sorted, no such requirements are imposed or
     considered by this function.
     '''
-
     
     # Strip all whitespace:
     src = re.sub(r'\s+', '', src)
