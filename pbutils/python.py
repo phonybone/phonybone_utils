@@ -1,17 +1,18 @@
 '''
 Utility functions related to general-purpose python.
 '''
-import sys
+
 import os
 import importlib
 import inspect
 import pkg_resources as pr
-from .files import package_fileres, replace_ext
+from .files import replace_ext
 from .configs import get_config, load_attributes_from_config, to_dict
-from .strings import qw, ppjson
+
 
 def lazy(fn):
     attr_name = '__lazy_' + fn.__name__
+
     @property
     def _lazyprop(self):
         if not hasattr(self, attr_name):
@@ -19,24 +20,25 @@ def lazy(fn):
         return getattr(self, attr_name)
     return _lazyprop
 
- 
+
 def import_class(fullname):
     ''' import and return a class based on module.clsname '''
     modname, clsname = tuple(fullname.rsplit('.', 1))
     mod = importlib.import_module(modname)
     return getattr(mod, clsname)
 
+
 class configured_class(object):
     '''
     Decorator to set class attributes from a config section(s).
     With no parameters, looks for a config (.ini) file with the
-    name <class>.ini, where <class> is the name of the class 
-    (converted to lowercase). From within that config, it looks 
+    name <class>.ini, where <class> is the name of the class
+    (converted to lowercase). From within that config, it looks
     for a section with the (exact) name of the class from which
     to initialize values.
 
     An addition config and section can be specified using the
-    arguments to the decorator.  If given, it looks for file 
+    arguments to the decorator.  If given, it looks for file
     relative to the class's package (unless the filename given
     is an absolute path) and uses the section specified.
     '''
@@ -55,13 +57,13 @@ class configured_class(object):
         pkg = mod.__name__.split('.')[0]
         pkg_root = os.path.abspath(pr.resource_filename(pkg, '.'))
 
-
         # try to get default values from default config and section:
         defaults = {
             '__class_file': clsfile,
             '__module': cls.__module__,
             '__pkg_root': pkg_root,
-            }
+        }
+
         if self.defaults_fn is not None and self.def_sections is not None:
             if not os.path.isabs(self.defaults_fn):
                 # locate defaults_fn in same directory as class file
