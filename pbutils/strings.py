@@ -69,30 +69,30 @@ class StringEncoder(json.JSONEncoder):
             return str(obj)
 
 
-class PrettyFloat(float):
-    prec = 2
+# PrettyFloat approach from here: https://stackoverflow.com/questions/1447287/format-floats-with-standard-json-module
+class PrettyFloat:
+    def __init__(self, value, prec=2):
+        self.value = value
+        self.prec = prec
+
     def __repr__(self):
-        return f'%.{self.prec}f' % self
+        return f'%.{self.prec}f' % self.value
 
 
-def pretty_floats(obj):
+def pretty_floats(obj, float_prec):
     if isinstance(obj, float):
-        return repr(PrettyFloat(obj))
+        return repr(PrettyFloat(obj, float_prec))
     elif isinstance(obj, dict):
-        return dict((k, pretty_floats(v)) for k, v in obj.items())
+        return dict((k, pretty_floats(v, float_prec)) for k, v in obj.items())
     elif isinstance(obj, (list, tuple)):
-        return list(map(pretty_floats, obj))
+        return list(map(pretty_floats, obj, float_prec))
     elif hasattr(obj, '__dict__'):
-        return pretty_floats(obj.__dict__)
+        return pretty_floats(obj.__dict__, float_prec)
     return str(obj)
 
 
 def ppjson(data, indent=2, float_prec=2):
-    old_prec = PrettyFloat.prec
-    PrettyFloat.prec = float_prec
-    dump = json.dumps(pretty_floats(data), indent=indent)   # , cls=StringEncoder)
-    PrettyFloat.prec = old_prec
-    return dump
+    return json.dumps(pretty_floats(data, float_prec), indent=indent)   # , cls=StringEncoder)
 
 
 def qw(s, rx=None):
@@ -132,9 +132,8 @@ if __name__ == '__main__':
         print(F"foo.__dict__.pretty: {ppjson(foo.__dict__, float_prec=3)}")
         print(F"foo.__dict__: {foo.__dict__}")
 
-        print(ppjson([23.2390], float_prec=1))
         for p in range(10):
-            print(ppjson(23.53424, float_prec=p))
+            print(ppjson(foo, float_prec=p))
     test_ppjson()
 
     def test_qw():
