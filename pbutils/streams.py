@@ -21,6 +21,7 @@ def get_output_stream(filename, mode='w', verbose_stream=None):
         if verbose_stream is not None:
             verbose_stream.write('{} written\n'.format(filename))
 
+
 @contextmanager
 def get_input_stream(filename):
     if filename is None or filename == '-':
@@ -30,25 +31,20 @@ def get_input_stream(filename):
     yield inp
     if inp is not sys.stdin:
         inp.close()
-    
-            
+
 
 warn = partial(print, file=sys.stderr)
+
 
 def die(msg):
     raise RuntimeError(msg)
 
 
-def warn(s, force=False):
-    ''' print a mesage to stderr if 'DEBUG' set in environment, or if force flag given '''
-    if os.environ.get('DEBUG') or force:
-        sys.stderr.write("{}\n".format(s))
-
 def records(stream, delimiter):
     '''
     Generate all records found in the stream, using delimiter as an end-record delimitier.
     '''
-    parts=[]
+    parts = []
     for line in stream.readlines():
         parts.append(line)
         if line.startswith(delimiter):
@@ -56,22 +52,24 @@ def records(stream, delimiter):
             parts = []
     if parts:
         yield ''.join(parts)    # last one
-        
+
+
 def get_root(path):
     ''' return the basename of a file path, with extension stripped '''
     fn = os.path.basename(path)
     return os.path.splitext(fn)[0]
 
+
 def do_pipe(cmds):
     '''
-    Run a set of piped commands.  
+    Run a set of piped commands.
 
     cmds is a list of lists; each element is a cmd as may be fed to subprocess.Popen.
 
     Return the set of pipe objects created and the final output.
 
     Attempts to handle input redirection for the first command and
-      output redirection for the last command.  Whitespace required 
+      output redirection for the last command.  Whitespace required
       between '>' and filename, '<' and filename.
 
     Pretty primitive; caller beware.
@@ -98,22 +96,23 @@ def do_pipe(cmds):
         dst = None
     cmds.append(cmdZ)
 
-    pipes=[subprocess.Popen(cmds[0], stdout=subprocess.PIPE)] # first command, no stdin=
+    pipes = [subprocess.Popen(cmds[0], stdout=subprocess.PIPE)]  # first command, no stdin=
     for i, cmd in enumerate(cmds[1:]):
-        p=subprocess.Popen(cmd, stdin=pipes[i].stdout, stdout=subprocess.PIPE) # i is 0-based
+        p = subprocess.Popen(cmd, stdin=pipes[i].stdout, stdout=subprocess.PIPE)  # i is 0-based
         pipes.append(p)
-    output=pipes[-1].communicate()[0]
+    output = pipes[-1].communicate()[0]
 
     if dst is not None:
         with open(dst, 'w') as f:
             f.write(output)
-            
+
     return pipes, output
+
 
 def gather_input(prompts):
     ''' Loop over prompts using raw_input; fill in the fields '''
     _rx = re.compile(' ')
-    
+
     def _get_value(key, info):
         prompt = info.get('prompt', 'Enter {}'.format(key))
         while True:
@@ -148,14 +147,14 @@ def gather_input(prompts):
                         continue
                 else:
                     raise RuntimeError("Don't know how to validate {} using {} (type={})".format(key, validate, type(validate)))
-                
+
             else:               # no validation info given
                 info['value'] = value
                 return
             print('unable to validate {}; try again'.format(value))
             if 'validation_help' in info:
                 print(info['validation_help'])
-                
+
     for key, info in iteritems(prompts):
         if 'value' not in info:
             _get_value(key, info)
