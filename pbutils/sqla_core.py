@@ -30,15 +30,17 @@ class SimpleStore:
 
     Using this class imposes a lot of restrictions, including (but not limited to):
     - Each table must have a single primary key named "id"
-
+    - no joins
+    - no group by, no ordering, no limits, etc...
     """
 
     def __init__(self, conn, table):
         self.conn = conn
         self.table = table
 
-    def insert(self, obj):
-        stmt = self.table.insert().values(**obj)
+    def insert(self, row):
+        """ Insert a row (dict) into the db """
+        stmt = self.table.insert().values(**row)
         result = self.conn.execute(stmt)  # auto-commits
         return result.lastrowid
 

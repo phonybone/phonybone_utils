@@ -1,11 +1,11 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 
 def groupCount(it, f=None):
     if f is None:
         def f(x):
             return x
-    gc = defaultdict(int)
+    gc = Counter()
     for x in it:
         gc[f(x)] += 1
     return gc
@@ -37,3 +37,4 @@ if __name__ == '__main__':
                  lambda s: len(s)
     )
     print(gc)
+    print('yay')

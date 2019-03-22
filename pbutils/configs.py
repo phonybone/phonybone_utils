@@ -8,6 +8,7 @@ if sys.version_info[0] == 2:
 elif sys.version_info[0] == 3:
     import configparser as CP
 
+
 def get_config(config_fn, defaults={}, config_type='Safe'):
     '''
     Create and initialize a Config object from the given file.  Throws exceptions on missing file, syntax errors.
@@ -21,6 +22,7 @@ def get_config(config_fn, defaults={}, config_type='Safe'):
     if len(consumed_files) == 0:
         raise RuntimeError("unable to read config file {}".format(config_fn))
     return config
+
 
 def merge_configs(dst_conf, src_conf, *sections):
     ''' merge all of src_conf[*sections] into dst_conf '''
@@ -50,7 +52,7 @@ def inject_opts(config, opts, section='opts', coerce_strs=False):
                 config.set(section, opt, str(value))
         else:
             config.set(section, opt, value)
-            
+
 
 def to_dict(config, section):
     ''' convert a config section into a dict. '''
