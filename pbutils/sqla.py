@@ -2,6 +2,7 @@
 SqlAlchemy classes.
 
 All classes used by our SqlAlchemy utilization are defined here.
+Note: these are for use with the sqla ORM, mostly.
 '''
 
 import sys
@@ -88,7 +89,3 @@ def session_dbh(session):
     ''' extract the db connection from a session '''
     return session.connection().connection.connection
 
-
-def col_of(table, col_name):
-    ''' Mnemonic to return a column of a table '''
-    return getattr(table.c, col_name)

@@ -80,6 +80,7 @@ def load_attributes_from_config(obj, config, section, prepend_section=False, ove
     overwrite: if False, will only overwrite values in obj if "not hasattr(obj, attrname) or getattr(obj, attrname) is None"
     '''
     profile_values = to_dict(config, section)
+
     for key, values in iteritems(profile_values):
         attrname = _get_attrname(key, section, prepend_section)
         if key.endswith('_svalues'):
