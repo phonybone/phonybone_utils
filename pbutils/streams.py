@@ -1,10 +1,13 @@
-import sys, os
+import sys
+import os
 import re
 from contextlib import contextmanager
 import subprocess
 from future.utils import iteritems
+from functools import partial
 
 from pbutils.strings import qw
+
 
 @contextmanager
 def get_output_stream(filename, mode='w', verbose_stream=None):
@@ -29,6 +32,13 @@ def get_input_stream(filename):
         inp.close()
     
             
+
+warn = partial(print, file=sys.stderr)
+
+def die(msg):
+    raise RuntimeError(msg)
+
+
 def warn(s, force=False):
     ''' print a mesage to stderr if 'DEBUG' set in environment, or if force flag given '''
     if os.environ.get('DEBUG') or force:
