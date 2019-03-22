@@ -27,8 +27,20 @@ def json_copy(d):
     return json.loads(json.dumps(d))
 
 
-def from_attrs(obj, keys=None):
+def from_attrs(obj, keys=None, include_nones=False):
     ''' return a dictionary based on an object's attributes '''
     if keys is None:
         keys = obj.__dict__.keys()
     return hashsubset(obj.__dict__, *keys)
+
+
+def remove_nones(d):
+    keys0 = [k for k in d.keys() if d[k] is None]
+    for k in keys0:
+        del d[k]
+    return d
+
+
+if __name__ == '__main__':
+    d = dict(this='that', these='those', n=None)
+    print(json.dumps(remove_nones(d)))
