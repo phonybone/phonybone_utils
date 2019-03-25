@@ -6,7 +6,6 @@ if sys.version_info[0] == 2:
     deps += ['mysql', 'mysql-connector', 'ConfigParser']
 elif sys.version_info[0] == 3:
     deps += ['pymysql', 'configparser']
-print('deps: {}'.format(deps))
 
 setup(
     name="phonybone_utils",
