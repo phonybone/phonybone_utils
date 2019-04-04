@@ -1,4 +1,4 @@
-from pbutils.configs import get_config
+from pbutils.configs import get_config_from_data
 
 
 def test_attr_interface():
@@ -13,7 +13,7 @@ ignorance = strength
 freedom = slavery
 '''
     # conf = get_config('tests/configs/config.ini')
-    conf = get_config(conf_data)
+    conf = get_config_from_data(conf_data)
 
     assert hasattr(conf, 'default')
     assert hasattr(conf, 'orwell')
