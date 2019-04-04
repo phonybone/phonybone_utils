@@ -1,5 +1,4 @@
 import sys
-import os
 import re
 from future.utils import iteritems
 
@@ -45,7 +44,12 @@ class attrInterface:
         return section_obj
 
 
-def get_config(config_data, defaults={}, config_type='Safe', def_section='default'):
+def get_config(config_fn, defaults={}, config_type='Raw', def_section='default'):
+    with open(config_fn) as f:
+        return get_config_from_data(f.read(), defaults, config_type, def_section)
+
+
+def get_config_from_data(config_data, defaults={}, config_type='Raw', def_section='default'):
     '''
     Create and initialize a Config object from the given file or filename.
     Throws exceptions on missing file, syntax errors.
@@ -59,13 +63,7 @@ def get_config(config_data, defaults={}, config_type='Safe', def_section='defaul
     config.__class__ = type('ConfigParserPB', (cls, attrInterface), {'__init__': attrInterface.__init__})
     config.def_section = def_section
 
-    if os.path.exists(config_data):
-        with open(config_data) as f:
-            conf_str = f.read()
-    else:
-        conf_str = config_data
-
-    config.read_string(conf_str)
+    config.read_string(config_data)
     return config
 
 
@@ -79,44 +77,24 @@ def merge_configs(dst_conf, src_conf, *sections):
             dst_conf.set(section, opt, value)
 
 
-def inject_opts(config, opts, section='opts', coerce_strs=False):
-    '''
-    Add the contents of a NameSpace (opts) to a config section
-    Only works with RawConfigParsers; other types interpolate values, sometimes are not interpolatable (eg bool).
-    '''
-    try:
-        config.add_section(section)
-    except CP.DuplicateSectionError:
-        pass
-
-    for opt, value in iteritems(vars(opts)):
-        if coerce_strs:
-            try:
-                config.set(section, opt, value)
-            except TypeError:
-                config.set(section, opt, str(value))
-        else:
-            config.set(section, opt, value)
-
-
-def inject_opts2(config, opts, create_sections=True):
+def inject_opts(config, opts, create_sections=True):
     '''
     Inject the contents of opts into config.
     '''
     # I don't see how this can work: attributes cannot have '.' in their
     # name.  This will put everything into the default section (which is ok?)
-    for opt, value in iteritems(vars(opts)):
-        if '.' in opt:
-            section, key = opt.rsplit('.', maxsplit=1)
-        else:
-            section, key = 'default', opt
+    try:
+        section = config.def_section
+    except AttributeError:
+        section = 'default'
 
-        if not config.has_section(section) and create_sections:
-            config.add_section(section)
+    if not config.has_section(section) and create_sections:
+        config.add_section(section)
 
+    for key, value in iteritems(vars(opts)):
         try:
             config.set(section, key, value)
-        except TypeError:
+        except TypeError as e:  # happens for non-RawConfigParser
             config.set(section, key, str(value))
 
 
