@@ -9,18 +9,63 @@ elif sys.version_info[0] == 3:
     import configparser as CP
 
 
-def get_config(config_fn, defaults={}, config_type='Safe'):
+# Todo:
+# 1. get_config should be split into two functions, one for filenames and one for data
+# (and one for files?)
+# 2. Further testing
+
+
+class attrInterface:
     '''
-    Create and initialize a Config object from the given file.  Throws exceptions on missing file, syntax errors.
+    Dynamic mixin to add to ConfigParser objects to allow lookups using
+    attribute syntax.
     '''
-    if not os.path.exists(config_fn):
-        raise OSError("{}: no such file".format(config_fn))
-    clsname = '{}ConfigParser'.format(config_type)
+    # What this does:
+    # Allow attribute-style lookup from a config object, eg
+    # some_value = config.section.key2
+    # It uses lazy loading to populate a generic object ('Blank') with attributes
+    # looked up from the section of the config.
+    def __getattr__(self, attr):
+        #  this is also called by hasattr, so be careful...
+        # see https://stackoverflow.com/questions/30290389/how-to-prevent-hasattr-from-retrieving-the-attribute-value-itself
+        # for a possible solution
+
+        # Is attr in the default section?
+        if self.has_option(self.def_section, attr):
+            return self.get(self.def_section, attr)
+
+        if not self.has_section(attr):
+            raise AttributeError(attr)
+
+        # populate a generic object with the section's key/values:
+        section_obj = type('Blank', (object,), {})()
+        for key, value in self.items(attr):
+            setattr(section_obj, key, value)
+        setattr(self, attr, section_obj)
+        return section_obj
+
+
+def get_config(config_data, defaults={}, config_type='Safe', def_section='default'):
+    '''
+    Create and initialize a Config object from the given file or filename.
+    Throws exceptions on missing file, syntax errors.
+    '''
+    if config_type == 'Safe' and sys.version_info[0] == 3:
+        clsname = 'ConfigParser'
+    else:
+        clsname = config_type + 'ConfigParser'
     cls = getattr(CP, clsname)
     config = cls(defaults=defaults)
-    consumed_files = config.read(config_fn)
-    if len(consumed_files) == 0:
-        raise RuntimeError("unable to read config file {}".format(config_fn))
+    config.__class__ = type('ConfigParserPB', (cls, attrInterface), {'__init__': attrInterface.__init__})
+    config.def_section = def_section
+
+    if os.path.exists(config_data):
+        with open(config_data) as f:
+            conf_str = f.read()
+    else:
+        conf_str = config_data
+
+    config.read_string(conf_str)
     return config
 
 
@@ -54,12 +99,34 @@ def inject_opts(config, opts, section='opts', coerce_strs=False):
             config.set(section, opt, value)
 
 
+def inject_opts2(config, opts, create_sections=True):
+    '''
+    Inject the contents of opts into config.
+    '''
+    # I don't see how this can work: attributes cannot have '.' in their
+    # name.  This will put everything into the default section (which is ok?)
+    for opt, value in iteritems(vars(opts)):
+        if '.' in opt:
+            section, key = opt.rsplit('.', maxsplit=1)
+        else:
+            section, key = 'default', opt
+
+        if not config.has_section(section) and create_sections:
+            config.add_section(section)
+
+        try:
+            config.set(section, key, value)
+        except TypeError:
+            config.set(section, key, str(value))
+
+
 def to_dict(config, section):
     ''' convert a config section into a dict. '''
+    # This is stupid; just use config.items(section)
     return {k: v for k, v in config.items(section)}
 
 
-def get_list(config, section, opt, delimiter=re.compile('[,\s]+')):
+def get_list(config, section, opt, delimiter=re.compile('[,/s]+')):
     ''' split a config value according to delimiter and return the list '''
     return re.split(delimiter, config.get(section, opt))
 
