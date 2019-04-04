@@ -4,7 +4,7 @@ import argparse
 from importlib import import_module
 from argparse import RawTextHelpFormatter  # Note: this applies to all options, might not always be what we want...
 
-from pbutils.configs import get_config, to_dict, inject_opts2, CP
+from pbutils.configs import get_config, get_config_from_data, to_dict, inject_opts
 from .strings import qw, ppjson
 from .streams import warn
 
@@ -24,7 +24,10 @@ def parser_stub(docstr):
 
 
 def _get_default_config_fn():
-    return sys.argv[0].replace('.py', '.ini')
+    fn = sys.argv[0].replace('.py', '.ini')
+    if not fn.endswith('.ini'):
+        fn += '.ini'
+    return fn
 
 
 def _assemble_config(opts):
@@ -41,11 +44,11 @@ def _assemble_config(opts):
             if e.errno is 2 and e.filename != _get_default_config_fn():
                 raise
             else:
-                config = CP.RawConfigParser()
+                config = get_config_from_data('[default]')
                 if opts.d:
                     warn(f'skipping non-existent config file {opts.config}')
 
-    inject_opts2(config, opts)
+    inject_opts(config, opts)
     return config
 
 
@@ -128,9 +131,6 @@ class FloatIntStrParserAction(argparse.Action):
 
 
 if __name__ == '__main__':
-    import os
-    from streams import warn
-
     def getopts(opts_ini=None):
         import argparse
         parser = argparse.ArgumentParser()
