@@ -12,7 +12,7 @@ from .streams import warn
 def parser_stub(docstr):
     parser = argparse.ArgumentParser(description=docstr, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--config', default=_get_default_config_fn())
-    parser.add_argument('-v', action='store_true', help='verbose')
+    parser.add_argument('-v', '--verbose', action='store_true', help='verbose')
     parser.add_argument('-d', action='store_true', help='debugging flag')
 
     # leave comments here as templates
@@ -53,6 +53,13 @@ def _assemble_config(opts):
 
 
 def wrap_main(main, parser, args=sys.argv[1:]):
+    '''
+    create config from config file and cmd-line args;
+    set os.environ['DEBUG'] if -d;
+    Call main(config);
+    trap exceptions; if they occur, print an error message (with optional stack trace)
+      and set exit value appropriately.
+    '''
     opts = parser.parse_args(args)
     config = _assemble_config(opts)
 
