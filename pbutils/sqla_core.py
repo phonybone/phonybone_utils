@@ -4,6 +4,7 @@ meta = sa.MetaData()
 
 
 def init_sqla(db_url):
+    ''' returns a connection to the db pointed at by db_url '''
     engine = sa.create_engine(db_url)
     conn = engine.connect()
     meta.create_all(engine)
@@ -43,6 +44,10 @@ class SimpleStore:
         stmt = self.table.insert().values(**row)
         result = self.conn.execute(stmt)  # auto-commits
         return result.lastrowid
+
+    def get_pk(self, pk):
+        stmt = sa.select(self.table.c.values()).where('id' == pk)
+        return self.conn.execute(stmt).fetchone()
 
     def get(self, **where):
         """
