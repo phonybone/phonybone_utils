@@ -102,3 +102,4 @@ ENV/
 
 TAGS
 .pytest_cache
+.db
