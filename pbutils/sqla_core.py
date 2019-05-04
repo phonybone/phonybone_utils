@@ -1,14 +1,28 @@
 import sqlalchemy as sa
+from sqlalchemy.inspection import inspect
+import logging
+log = logging.getLogger(__name__)
 
 meta = sa.MetaData()
-
+engine = None
 
 def init_sqla(db_url):
     ''' returns a connection to the db pointed at by db_url '''
+    global engine
     engine = sa.create_engine(db_url)
     conn = engine.connect()
     meta.create_all(engine)
-    return conn
+    return engine, meta, conn
+
+
+def import_tables(engine, meta):
+    ''' Return a dict: k=tablename, v=table '''
+    meta.reflect(bind=engine)
+    return meta.tables
+
+
+def table_by_name(meta, tablename):
+    return meta.tables.get(tablename)  # or none
 
 
 def cols_of(table):
@@ -22,6 +36,10 @@ def colnames_of(table):
 def col_of(table, col_name):
     ''' Mnemonic to return a column of a table '''
     return getattr(table.c, col_name)
+
+
+def url_of(connection):
+    return connection.engine.url
 
 
 class SimpleStore:
@@ -38,6 +56,12 @@ class SimpleStore:
     def __init__(self, conn, table):
         self.conn = conn
         self.table = table
+        # pks = inspect(table).primary_key.columns.values()  # Column objects
+        # self.primary_keys = pks
+
+    @property
+    def primary_keys(self):
+        return [c[1] for c in self.table.c.items() if c[1].primary_key]
 
     def insert(self, row):
         """ Insert a row (dict) into the db """
@@ -46,8 +70,9 @@ class SimpleStore:
         return result.lastrowid
 
     def get_pk(self, pk):
-        stmt = sa.select(self.table.c.values()).where('id' == pk)
-        return self.conn.execute(stmt).fetchone()
+        stmt = sa.select(self.table.c.values()).where(self.primary_keys == pk)
+        print(f"{str(stmt)}, pk={pk}")
+        return self.conn.execute(stmt).first()  # returns None when not found
 
     def get(self, **where):
         """
