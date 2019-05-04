@@ -13,7 +13,7 @@ class SpanMixin(object):
 
     def __neq__(self, other):
         return not self == other
-    
+
     def __lt__(self, other):
         return self.start < other.start or\
             self.start == other.start and self.stop < other.stop
@@ -70,7 +70,7 @@ if __name__ == '__main__':
     assert all([s2.overlap(s1) == exp for s2, exp in zip(s2s, exps)])
 
     # overlap w/reverse orders:
-    s2_data = ((5,1), (10,5), (12,11), (22, 18), (38,23), (21, 9)) 
+    s2_data = ((5,1), (10,5), (12,11), (22, 18), (38,23), (21, 9))
     s2s = [SpanMixin(*t) for t in s2_data]
     assert all([s2.overlap(s1) == exp for s2, exp in zip(s2s, exps)])
 
