@@ -4,7 +4,6 @@ from pbutils.sqla_core import init_sqla, SimpleStore, table_by_name, import_tabl
 def test_primary_keys(sqlite_test_db_url):
     engine, meta, conn = init_sqla(sqlite_test_db_url)
     tables = import_tables(engine, meta)
-    print(F"tables: {tables}")
 
     account_table = table_by_name(meta, 'account')
     assert account_table is not None
