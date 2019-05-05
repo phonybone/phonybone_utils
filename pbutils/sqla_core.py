@@ -56,12 +56,7 @@ class SimpleStore:
     def __init__(self, conn, table):
         self.conn = conn
         self.table = table
-        # pks = inspect(table).primary_key.columns.values()  # Column objects
-        # self.primary_keys = pks
-
-    @property
-    def primary_keys(self):
-        return [c[1] for c in self.table.c.items() if c[1].primary_key]
+        self.primary_keys = [c[1] for c in self.table.c.items() if c[1].primary_key]
 
     def insert(self, row):
         """ Insert a row (dict) into the db """
