@@ -56,7 +56,12 @@ class SimpleStore:
     def __init__(self, conn, table):
         self.conn = conn
         self.table = table
-        self.primary_keys = [c[1] for c in self.table.c.items() if c[1].primary_key]
+
+    @property
+    def primary_keys(self):
+        if not hasattr(self, '__primary_keys'):
+            self.__primary_keys = [c[1] for c in self.table.c.items() if c[1].primary_key]
+        return self.__primary_keys
 
     def insert(self, row):
         """ Insert a row (dict) into the db """
@@ -65,8 +70,8 @@ class SimpleStore:
         return result.lastrowid
 
     def get_pk(self, pk):
-        stmt = sa.select(self.table.c.values()).where(self.primary_keys == pk)
-        print(f"{str(stmt)}, pk={pk}")
+        ''' return the row for the given primary key, or None '''
+        stmt = sa.select(self.table.c.values()).where(self.primary_keys[0] == pk)
         return self.conn.execute(stmt).first()  # returns None when not found
 
     def get(self, **where):
@@ -90,7 +95,7 @@ class SimpleStore:
 
     def update(self, pk, data):
         """ update a given row based on a (single) primary key (named 'id') """
-        stmt = self.table.update().where(self.table.c.id == pk).values(**data)
+        stmt = self.table.update().where(self.table.c.id == pk).values(**data)  # todo: c.id -> pks
         return self.conn.execute(stmt)
 
     def clear(self):
