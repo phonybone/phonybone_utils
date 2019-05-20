@@ -1,10 +1,10 @@
 import sqlalchemy as sa
-from sqlalchemy.inspection import inspect
 import logging
 log = logging.getLogger(__name__)
 
 meta = sa.MetaData()
 engine = None
+
 
 def init_sqla(db_url):
     ''' returns a connection to the db pointed at by db_url '''
