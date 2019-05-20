@@ -142,6 +142,13 @@ def load_attributes_from_config(obj, config, section, prepend_section=False, ove
             if not overwrite and hasattr(obj, attrname) and getattr(obj, attrname) is not None:
                 continue
 
+            if values.strip().lower() == 'true':
+                setattr(obj, attrname, True)
+                continue
+            elif values.strip().lower() == 'false':
+                setattr(obj, attrname, False)
+                continue
+
             for _type in (int, float):
                 try:
                     setattr(obj, attrname, _type(values))
