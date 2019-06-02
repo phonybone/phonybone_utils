@@ -1,15 +1,21 @@
 import sys
 from setuptools import setup, find_packages
 
+from pbutils import version
+
 deps = ['sqlalchemy']
 if sys.version_info[0] == 2:
     deps += ['mysql', 'mysql-connector', 'ConfigParser']
 elif sys.version_info[0] == 3:
     deps += ['pymysql', 'configparser']
 
+
+sys.path.append(os.path.dirname(__file__))
+
+
 setup(
     name="phonybone_utils",
-    version="0.1",
+    version=version,
     packages=find_packages(),
     # scripts=['say_hello.py'],
 
