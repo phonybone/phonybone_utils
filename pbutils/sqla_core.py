@@ -1,5 +1,6 @@
 import sqlalchemy as sa
 import logging
+from pbutils.streams import records
 log = logging.getLogger(__name__)
 
 meta = sa.MetaData()
@@ -41,6 +42,22 @@ def col_of(table, col_name):
 def url_of(connection):
     return connection.engine.url
 
+
+def do_stream(connection, stream):
+    ''' 
+    Execute all the statements in a stream.
+    Blindly.  No safety whatsoever.  Caller's responsibilty.
+    
+    Also not guaranteed to be correct; just splits on lines ending in ';'.
+    '''
+    trans = connection.begin()
+    try:
+        for stmt in records(stream, ";\n"):
+            connection.execute(sa.text(stmt))
+    except sa.exc.OperationalError:
+        trans.rollback()
+    else:
+        trans.commit()
 
 class SimpleStore:
     """
