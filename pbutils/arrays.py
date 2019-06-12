@@ -20,6 +20,10 @@ def groupBy(it, f=None):
         gc[f(x)].append(x)
     return gc
 
+
+def array2d(r, c):
+    return [ [None] * c for i in range(r)]
+
 ########################################################################
 
 
