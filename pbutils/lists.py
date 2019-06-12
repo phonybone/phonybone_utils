@@ -16,7 +16,10 @@ def maxspan(spans):
 
 
 def flatten(l):
-    ''' l is a list comprised of sub-lists or tuples.  Return a 1D list containing all the elements of l in order. '''
+    '''
+    l is a list comprised of sub-lists or tuples.
+    Return a 1D list containing all the elements of l in order.
+    '''
     # see https://stackoverflow.com/questions/10632839/python-transform-list-of-tuples-in-to-1-flat-list-or-1-matrix
     return list(sum(l, ()))
 
