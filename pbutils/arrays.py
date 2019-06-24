@@ -33,6 +33,17 @@ def array2d(r, c):
     ''' create a 2d array of size r x c '''
     return [[None] * c for i in range(r)]
 
+
+def arrayNd(*dims):
+    '''
+    Return N-dimensional array with dimensions defined by dims (len(dims) must make sense).
+    '''
+    if len(dims) == 2:
+        return array2d(*dims)
+
+    return [arrayNd(*dims[1:]) for _ in range(dims[0])]
+
+
 ########################################################################
 
 
