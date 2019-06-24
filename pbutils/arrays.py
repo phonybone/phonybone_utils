@@ -12,6 +12,14 @@ def groupCount(it, f=None):
 
 
 def groupBy(it, f=None):
+    '''
+    For a given iterator, return a dict that groups elements according to the function.
+    Each key in the dict is the result of the function applied to the iterator's elements.
+    Each value in the dict is a list of the grouped elements.
+    If the function is None, then the key value is used as the function.
+
+    Example:
+    '''
     if f is None:
         def f(x):
             return x
@@ -22,7 +30,8 @@ def groupBy(it, f=None):
 
 
 def array2d(r, c):
-    return [ [None] * c for i in range(r)]
+    ''' create a 2d array of size r x c '''
+    return [[None] * c for i in range(r)]
 
 ########################################################################
 
