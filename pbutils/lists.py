@@ -25,8 +25,6 @@ def flatten(l):
 
 
 if __name__ == '__main__':
-    from strings import ppjson, qw
-
     def test_grow_to():
         lol = [[] for _ in range(3)]
         assert(len(lol) == 3)
