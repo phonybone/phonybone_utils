@@ -45,7 +45,7 @@ def records(stream, delimiter):
     Generate all records found in the stream, using delimiter as an end-record delimitier.
     '''
     parts = []
-    for line in [line.decode() for line in stream.readlines()]:
+    for line in [line.decode() for line in stream.readlines()]:  # why are we decoding?
         parts.append(line)
         if line.endswith(delimiter):
             yield ''.join(parts)
