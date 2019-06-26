@@ -76,6 +76,7 @@ class SimpleStore:
 
     @property
     def primary_keys(self):
+        ''' return list of column objects designated as primary keys  '''
         if not hasattr(self, '__primary_keys'):
             self.__primary_keys = [c[1] for c in self.table.c.items() if c[1].primary_key]
         return self.__primary_keys
@@ -112,7 +113,8 @@ class SimpleStore:
 
     def update(self, pk, data):
         """ update a given row based on a (single) primary key (named 'id') """
-        stmt = self.table.update().where(self.table.c.id == pk).values(**data)  # todo: c.id -> pks
+        pk_col = self.primary_keys[0]
+        stmt = self.table.update().where(pk_col == pk).values(**data)  # todo: c.id -> pks
         return self.conn.execute(stmt)
 
     def clear(self):
