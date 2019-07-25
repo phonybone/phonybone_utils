@@ -44,10 +44,10 @@ def url_of(connection):
 
 
 def do_stream(connection, stream):
-    ''' 
+    '''
     Execute all the statements in a stream.
     Blindly.  No safety whatsoever.  Caller's responsibilty.
-    
+ 
     Also not guaranteed to be correct; just splits on lines ending in ';'.
     '''
     trans = connection.begin()
@@ -58,6 +58,7 @@ def do_stream(connection, stream):
         trans.rollback()
     else:
         trans.commit()
+
 
 class SimpleStore:
     """
