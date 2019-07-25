@@ -53,7 +53,7 @@ def do_stream(connection, stream):
     trans = connection.begin()
     try:
         for stmt in records(stream, ";\n"):
-            connection.execute(sa.text(stmt))
+            connection.execute(sa.text(stmt).execution_options(autocommit=False))
     except sa.exc.OperationalError:
         trans.rollback()
     else:
