@@ -4,7 +4,9 @@ from setuptools import setup, find_packages
 
 from pbutils import version
 
-deps = ['sqlalchemy']
+with open('requirements.txt') as reqs:
+    deps = reqs.readlines()
+
 if sys.version_info[0] == 2:
     deps += ['mysql', 'mysql-connector', 'ConfigParser']
 elif sys.version_info[0] == 3:
