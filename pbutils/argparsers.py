@@ -1,10 +1,11 @@
 import sys
 import os
 import argparse
+from types import MethodType
 from importlib import import_module
 from argparse import RawTextHelpFormatter  # Note: this applies to all options, might not always be what we want...
 
-from pbutils.configs import get_config, get_config_from_data, to_dict, inject_opts
+from pbutils.configs import get_config, get_config_from_data, to_dict, inject_opts, CP
 from .strings import qw, ppjson
 from .streams import warn
 
@@ -30,7 +31,7 @@ def _get_default_config_fn():
     return fn
 
 
-def _assemble_config(opts):
+def _assemble_config(opts, default_section_name='default'):
     '''
     This builds a config by the following steps:
     1. read config file (as specified in opts, otherwise empty)
@@ -44,11 +45,23 @@ def _assemble_config(opts):
             if e.errno is 2 and e.filename != _get_default_config_fn():
                 raise
             else:
-                config = get_config_from_data('[default]')
+                config = get_config_from_data(f'[{default_section_name}]')
                 if opts.d:
                     warn(f'skipping non-existent config file {opts.config}')
 
     inject_opts(config, opts)
+
+    # add a convenience method to get opts, which are stored in the default section:
+    def opt(self, opt, default=None):
+        try:
+            return self.get(default_section_name, opt)
+        except CP.NoOptionError:
+            if default is not None:
+                return default
+            else:
+                raise
+    config.opt = MethodType(opt, config)
+
     return config
 
 
