@@ -17,7 +17,10 @@ def init_sqla(db_url):
 
 
 def import_tables(engine, meta):
-    ''' Return a dict: k=tablename, v=table '''
+    '''
+    Get all tables from a db engine.
+    Return a dict: k=tablename, v=table
+    '''
     meta.reflect(bind=engine)
     return meta.tables
 
@@ -47,7 +50,7 @@ def do_stream(connection, stream):
     '''
     Execute all the statements in a stream.
     Blindly.  No safety whatsoever.  Caller's responsibilty.
- 
+
     Also not guaranteed to be correct; just splits on lines ending in ';'.
     '''
     trans = connection.begin()
