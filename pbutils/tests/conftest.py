@@ -1,6 +1,7 @@
 import pytest
 from pbutils.sqla_core import init_sqla, import_tables
 
+
 @pytest.fixture
 def sqlite_test_db_url():
     return 'sqlite:///tests/test.db'
@@ -16,4 +17,3 @@ def eng_meta_conn(sqlite_test_db_url):
 def tables(eng_meta_conn):
     engine, meta, conn = eng_meta_conn
     yield import_tables(engine, meta)
-    
