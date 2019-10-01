@@ -5,6 +5,7 @@ import atexit
 import threading
 from collections import namedtuple
 from uuid import uuid4
+import logging
 
 from flask import Flask, render_template, request
 import waitress
@@ -17,7 +18,7 @@ CapturedRequest = namedtuple('CapturedRequest', ['id', 'path', 'args', 'method',
 
 class Sham:
     ''' Encapsulate sham server as an object. '''
-    def __init__(self, response_fn, name=__name__, port=6000, n_threads=4, daemon=False):
+    def __init__(self, response_fn, name=__name__, port=6000, n_threads=4, daemon=False, logger=None, log_lvl=logging.DEBUG):
         self.requests = []
         self.request_lock = threading.RLock()
         self.app = Flask(name)
@@ -25,6 +26,8 @@ class Sham:
         self.n_threads = n_threads
         self.app.debug = True
         self.daemon = daemon
+        self.logger = logger
+        self.log_lvl = log_lvl
 
         with open(response_fn) as f:
             self.responses = json.load(f)
@@ -32,6 +35,13 @@ class Sham:
         for resp_list in self.responses.values():
             for resp in resp_list:
                 resp['args'] = ImmutableMultiDict(resp.get('args', {}))
+        self.log(F"sham open for business on port {self.port}")
+
+    def log(self, message, level=None):
+        if self.logger:
+            if level is None:
+                level = self.log_lvl
+            self.logger.log(level, message)
 
     def _index(self):
         return render_template('index.html', requests=self.requests)
@@ -46,6 +56,7 @@ class Sham:
             data = request.data
 
         cr = CapturedRequest(str(uuid4()), path, dict(request.args), request.method, request.headers, data)
+        self.log(F"sham: {request.method} {path} {data}")
 
         with self.request_lock:
             self.requests.append(cr)
@@ -56,9 +67,11 @@ class Sham:
         potential_responses = None
 
         for pattern, responses in self.responses.items():
-            match = re.match(pattern, cr.path)
+            regex = re.compile(F"^{pattern}$")
+            match = regex.match(cr.path)
             if match:
                 if potential_responses:
+                    self.log('Multiple path patterns match, please reconfigure responses.')
                     raise IndexError('Multiple path patterns match, please reconfigure responses.')
 
                 potential_responses = responses
@@ -66,6 +79,7 @@ class Sham:
                 path_params = match.groupdict()
 
         if potential_responses is None:
+            self.log('NotFound')
             raise NotFound
 
         for resp in potential_responses:
@@ -87,6 +101,7 @@ class Sham:
 
         # TODO: MethodNotAllowed is raised both if methods didn't match and if no args didn't match, but ideally the second
         # should raise a different HTTP error.
+        self.log('MethodNotAllowed (but could be NoMatchingArgs')
         raise MethodNotAllowed
 
     @staticmethod
