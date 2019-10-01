@@ -7,7 +7,7 @@ from collections import namedtuple
 from uuid import uuid4
 
 from flask import Flask, render_template, request
-from waitress import serve
+import waitress
 from werkzeug.datastructures import ImmutableMultiDict
 from werkzeug.exceptions import MethodNotAllowed, NotFound
 
@@ -17,13 +17,14 @@ CapturedRequest = namedtuple('CapturedRequest', ['id', 'path', 'args', 'method',
 
 class Sham:
     ''' Encapsulate sham server as an object. '''
-    def __init__(self, response_fn, name=__name__, port=6000, n_threads=4):
+    def __init__(self, response_fn, name=__name__, port=6000, n_threads=4, daemon=False):
         self.requests = []
         self.request_lock = threading.RLock()
         self.app = Flask(name)
         self.port = port
         self.n_threads = n_threads
         self.app.debug = True
+        self.daemon = daemon
 
         with open(response_fn) as f:
             self.responses = json.load(f)
@@ -48,7 +49,6 @@ class Sham:
 
         with self.request_lock:
             self.requests.append(cr)
-
             if len(self.requests) > 10:
                 self.requests.pop(0)
 
@@ -109,10 +109,17 @@ class Sham:
         return not resp.get('methods') or cr.method.lower() in resp['methods'] or resp['methods'] == '*'
 
     def serve(self):
-        self.app.route('/')(self._index)
+        self.app.route('/')(self._index)  # can we move these to __init__?
         self.app.route('/<path:path>', methods=['GET', 'PUT', 'POST', 'PATCH', 'DELETE'])(self._catch_all)
 
-        serve(self.app, host='0.0.0.0', port=self.port, threads=self.n_threads)
+        if self.daemon:
+            def __server():
+                waitress.serve(self.app, host='0.0.0.0', port=self.port, threads=self.n_threads)
+            t = threading.Thread(target=__server, name='sham_server', daemon=True)
+            t.start()
+            return t
+        else:
+            waitress.serve(self.app, host='0.0.0.0', port=self.port, threads=self.n_threads)
 
 
 class ShamRecorder:
