@@ -3,7 +3,7 @@ import re
 
 
 if sys.version_info[0] == 2:
-    from future.utils import iteritems
+    from future.utils import viewitems
     import ConfigParser as CP
 elif sys.version_info[0] == 3:
     import configparser as CP
@@ -97,7 +97,7 @@ def inject_opts(config, opts, create_sections=True):
     if not config.has_section(section) and create_sections:
         config.add_section(section)
 
-    for key, value in iteritems(vars(opts)):
+    for key, value in vars(opts).items():
         try:
             config.set(section, key, value)
         except TypeError as e:  # happens for non-RawConfigParser
@@ -134,7 +134,7 @@ def load_attributes_from_config(obj, config, section, prepend_section=False, ove
     '''
     profile_values = to_dict(config, section)
 
-    for key, values in iteritems(profile_values):
+    for key, values in profile_values.items():
         attrname = _get_attrname(key, section, prepend_section)
         if key.endswith('_svalues'):
             _store_values(obj, key, attrname, values, str)
