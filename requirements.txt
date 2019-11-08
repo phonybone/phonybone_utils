@@ -1,2 +1,3 @@
 sqlalchemy
 future
+waitress
