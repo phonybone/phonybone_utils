@@ -1,8 +1,9 @@
 import sys
 import re
-from future.utils import iteritems
+
 
 if sys.version_info[0] == 2:
+    from future.utils import iteritems
     import ConfigParser as CP
 elif sys.version_info[0] == 3:
     import configparser as CP
@@ -45,6 +46,9 @@ class attrInterface:
 
 
 def get_config(config_fn, defaults={}, config_type='Raw', def_section='default'):
+    '''
+    Return a Config object.
+    '''
     with open(config_fn) as f:
         return get_config_from_data(f.read(), defaults, config_type, def_section)
 
@@ -53,6 +57,8 @@ def get_config_from_data(config_data, defaults={}, config_type='Raw', def_sectio
     '''
     Create and initialize a Config object from the given file or filename.
     Throws exceptions on missing file, syntax errors.
+
+    Returns a ConfigParser object (subtype determined by config_type param).
     '''
     if config_type == 'Safe' and sys.version_info[0] == 3:
         clsname = 'ConfigParser'
