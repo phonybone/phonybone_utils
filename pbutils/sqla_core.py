@@ -69,7 +69,6 @@ class SimpleStore:
     via SqlAlchemy.
 
     Using this class imposes a lot of restrictions, including (but not limited to):
-    - Each table must have a single primary key named "id"
     - no joins
     - no group by, no ordering, no limits, etc...
     """
