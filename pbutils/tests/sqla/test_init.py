@@ -1,4 +1,5 @@
 import unittest
+import pytest
 import pkg_resources as pr
 from sqlalchemy.orm.session import sessionmaker
 
@@ -8,6 +9,7 @@ from pbutils.mysql_utils import get_mysql
 from pbutils.tests import create_db
 
 
+@pytest.mark.skip('Mysql not always installed')
 class SqlaTest(unittest.TestCase):
     def test_init(self):
         ''' test initialization using sqlA_init_from_config_fn() '''

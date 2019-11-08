@@ -1,3 +1,4 @@
+import pytest
 import unittest
 import pkg_resources as pr
 
@@ -5,6 +6,8 @@ from pbutils.mysql_utils import get_mysql, get_tables, get_database
 from pbutils.configs import get_config
 from pbutils.strings import qw
 
+
+@pytest.mark.skip('Mysql not always installed')
 class TestGetMysql(unittest.TestCase):
     def setUp(self):
         pass
