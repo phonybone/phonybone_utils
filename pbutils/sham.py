@@ -144,7 +144,7 @@ class ShamRecorder:
     def __init__(self, fn):
         self.fn = fn
         self.reqres = {}
-        self.url_regex = re.compile('https?://([^/]+)/([^?]*)\??(.*)', flags=re.I)
+        self.url_regex = re.compile(r'https?://([^/]+)/([^?]*)\??(.*)', flags=re.I)
         atexit.register(self.write)
 
     def record(self, req, res):
