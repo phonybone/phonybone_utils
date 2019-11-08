@@ -37,6 +37,8 @@ def _assemble_config(opts, default_section_name='default'):
     1. read config file (as specified in opts, otherwise empty)
     2. inject environment vars as specified by config
     3. inject opts
+
+    returns a ConfigParserRaw object.
     '''
     if opts.config:
         try:
