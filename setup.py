@@ -20,7 +20,7 @@ setup(
     name="phonybone_utils",
     version=version,
     packages=find_packages(),
-    # scripts=['say_hello.py'],
+    scripts=['bin/version_bump'],
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
