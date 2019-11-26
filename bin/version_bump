@@ -18,16 +18,9 @@ from pbutils.streams import warn
 if __name__ == '__main__':
     def main(config):
         pkg_name, mmp, pkg_path = get_slice(config, 'default', 'pkg_name', 'mmp', 'pkg_path')
-        try:
-            vers = version_bump(pkg_name, mmp, pkg_path)
-            print(vers)
-            return 0
-        except CalledProcessError as e:
-            warn(e)
-            return e.returncode
-        except Exception as e:
-            warn(e)
-            return -1
+        vers = version_bump(pkg_name, mmp, pkg_path)
+        print(vers)
+        return 0
 
     def make_parser():
         parser = parser_stub(__doc__)
