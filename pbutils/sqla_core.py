@@ -63,6 +63,11 @@ def do_stream(connection, stream):
         trans.commit()
 
 
+def get_primary_keys(table):
+    raise RuntimeError('fu')
+    return [c[1] for c in table.c.items() if c[1].primary_key]
+
+
 class SimpleStore:
     """
     Base class that provides some convenience for (very) simple CRUD operations
@@ -81,7 +86,7 @@ class SimpleStore:
     def primary_keys(self):
         ''' return list of column objects designated as primary keys  '''
         if not hasattr(self, '__primary_keys'):
-            self.__primary_keys = [c[1] for c in self.table.c.items() if c[1].primary_key]
+            self.__primary_keys = get_primary_keys(self.table)
         return self.__primary_keys
 
     def insert(self, row):
