@@ -9,6 +9,7 @@ def test_primary_keys(sqlite_test_db_url):
     assert account_table is not None
     store = SimpleStore(conn, account_table)
     pks = store.primary_keys
+    assert len(pks) > 0
 
     for pk_col in pks:
         assert pk_col.primary_key
