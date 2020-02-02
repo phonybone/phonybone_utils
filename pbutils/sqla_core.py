@@ -64,7 +64,6 @@ def do_stream(connection, stream):
 
 
 def get_primary_keys(table):
-    raise RuntimeError('fu')
     return [c[1] for c in table.c.items() if c[1].primary_key]
 
 
