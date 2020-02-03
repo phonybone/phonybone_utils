@@ -67,6 +67,19 @@ def get_primary_keys(table):
     return [c[1] for c in table.c.items() if c[1].primary_key]
 
 
+def get_foreign_key_cols(table):
+    '''
+    return fk columns as dict:
+    key=fk_col_name, value=(tablename, pk) tuple
+    '''
+    fks = {}
+    for colname, col in table.c.items():
+        for fk in col.foreign_keys:  # usually empty
+            parent_tname, parent_cname = fk.target_fullname.split('.')
+            fks[colname] = (parent_tname, parent_cname)
+    return fks
+
+
 class SimpleStore:
     """
     Base class that provides some convenience for (very) simple CRUD operations
@@ -87,6 +100,12 @@ class SimpleStore:
         if not hasattr(self, '__primary_keys'):
             self.__primary_keys = get_primary_keys(self.table)
         return self.__primary_keys
+
+    @property
+    def foreign_keys(self):
+        if not hasattr(self, '__foreign_keys'):
+            self.__foreign_keys = get_foreign_key_cols(self.table)
+        return self.__foreign_keys
 
     def insert(self, row):
         """ Insert a row (dict) into the db """
