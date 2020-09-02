@@ -24,6 +24,7 @@ def get_output_stream(filename, mode='w', verbose_stream=None):
 
 @contextmanager
 def get_input_stream(filename):
+    ''' Context manager that takes a filename or stdin '''
     if filename is None or filename == '-':
         inp = sys.stdin
     else:

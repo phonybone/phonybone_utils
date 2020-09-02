@@ -219,3 +219,11 @@ def to_bool(value):
     if re.match(r'false', value, re.I):
         return False
     return bool(value)
+
+def print_config(config):
+    for key, section in config.items():
+        print(F"[{key}]")
+        for name in dict(config.items(key)):
+            value = config.get(key, name)
+            print(F"{name}: {value}")
+    

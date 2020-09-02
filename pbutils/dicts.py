@@ -13,13 +13,14 @@ def hashtuple(d, *keys):
     return tuple(hashslice(d, *keys))
 
 
-def to_dict(config, section):
-    ''' return the section of config as a dict '''
-    return config.items(section)
-
-
 def hashsubset(d, *keys):
     return {k: d[k] for k in keys}
+
+
+def to_dict(config, section):
+    ''' return the section of config as a dict '''
+    # why is this here?
+    return config.items(section)
 
 
 def json_copy(d):
@@ -35,10 +36,24 @@ def from_attrs(obj, keys=None, include_nones=False):
 
 
 def remove_nones(d):
-    keys0 = [k for k in d.keys() if d[k] is None]
-    for k in keys0:
-        del d[k]
+    ''' del d[k] from d if d[k] is None '''
+    for k, v in d.items():
+        if v is None:
+            del d[k]
     return d
+
+
+def simple_diff(d1, d2):
+    '''
+    Return 3-elem tuple containing lists of keys:
+    [0]: keys in d1 that are not in d2
+    [1]: keys in d2 that are not in d1
+    [2]: keys where d1[k] != d2[k]
+    '''
+    missing_d2 = [k1 for k1 in d1.keys() if k1 not in d2]
+    missing_d1 = [k2 for k2 in d2.keys() if k2 not in d1]
+    diff_keys = [k1 for k1, v1 in d1.items() if k1 in d2 and v1 != d2[k1]]
+    return missing_d2, missing_d1, diff_keys
 
 
 if __name__ == '__main__':

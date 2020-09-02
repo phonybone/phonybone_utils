@@ -83,9 +83,9 @@ def pretty_floats(obj, float_prec):
     if isinstance(obj, float):
         return repr(PrettyFloat(obj, float_prec))
     elif isinstance(obj, dict):
-        return dict((k, pretty_floats(v, float_prec)) for k, v in obj.items())
+        return {k: pretty_floats(v, float_prec) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple)):
-        return list(map(pretty_floats, obj, float_prec))
+        return [pretty_floats(o, float_prec) for o in obj]
     elif hasattr(obj, '__dict__'):
         return pretty_floats(obj.__dict__, float_prec)
     return str(obj)
@@ -139,8 +139,8 @@ if __name__ == '__main__':
     def test_qw():
         fodder = 'list, of, strings,   not,always, separated consistently'
         print(qw(fodder))
-        print(qw(fodder, '[\s,]+'))
-        print(qw(fodder, re.compile('[\s,]+')))
-        print(qw(fodder, re.compile('s')))
+        print(qw(fodder, r'[\s,]+'))
+        print(qw(fodder, re.compile(r'[\s,]+')))
+        print(qw(fodder, re.compile(r's')))
         print(qw(fodder, 's'))
     # test_qw()
