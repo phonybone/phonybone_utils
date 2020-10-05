@@ -72,6 +72,14 @@ def chunks(s, ll):
 
 
 class StringEncoder(json.JSONEncoder):
+    '''
+    Attempt to JSON encode anything.
+    First looks for an object method named 'as_json'
+    and invokes it if found.
+    Otherwise, attempts to convert sets to a string.
+    Otherwise, tries the default.  If that failes, returns
+    str(x)
+    '''
     def default(self, obj):
         if hasattr(obj, 'as_json'):
             return obj.as_json()
