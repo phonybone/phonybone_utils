@@ -6,6 +6,20 @@ import re
 import json
 
 
+def qw(s, rx=None):
+    '''
+    Perl-style quoting: qw("this that these those") returns ["this", "that" ,"these", "those"]
+    Splits input string on regular exp rx, or ' ' if not provided.
+    '''
+    if s == '':
+        return []
+    if rx is not None:
+        rx = re.compile(rx)     # apparently one can safely re-compile regexes, so this handles strings and rx's...
+        return re.split(rx, s)
+    else:
+        return s.split(' ')
+
+
 def expand_range_list(src):
     '''
     Given a string representing a list of integer-based ranges,
@@ -70,7 +84,18 @@ class StringEncoder(json.JSONEncoder):
 
 
 # PrettyFloat approach from here: https://stackoverflow.com/questions/1447287/format-floats-with-standard-json-module
+def ppjson(data, indent=2, float_prec=2):
+    '''
+    Return a nicely-formatted JSON blob base on data.
+    data can be any pretty much anything.  Objects that don't JSON-serialize
+    well are serialized as str(obj) unless data has a callable attribute named
+    'as_json', in which case that is called.
+    '''
+    return json.dumps(pretty_floats(data, float_prec), indent=indent)
+
+
 class PrettyFloat:
+    ''' Print floating point numbers with given precision '''
     def __init__(self, value, prec=2):
         self.value = value
         self.prec = prec
@@ -80,36 +105,27 @@ class PrettyFloat:
 
 
 def pretty_floats(obj, float_prec):
+    ''' Recursively string-ify an object, using PretyFloat for floating point values '''
     if isinstance(obj, float):
         return repr(PrettyFloat(obj, float_prec))
     elif isinstance(obj, dict):
         return {k: pretty_floats(v, float_prec) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple)):
         return [pretty_floats(o, float_prec) for o in obj]
+    elif hasattr(obj, 'as_json') and callable(obj.as_json):
+        return obj.as_json()
     elif hasattr(obj, '__dict__'):
         return pretty_floats(obj.__dict__, float_prec)
     return str(obj)
 
 
-def ppjson(data, indent=2, float_prec=2):
-    return json.dumps(pretty_floats(data, float_prec), indent=indent)   # , cls=StringEncoder)
-
-
-def qw(s, rx=None):
-    if s == '':
-        return []
-    if rx is not None:
-        rx = re.compile(rx)     # apparently one can safely re-compile regexes, so this handles strings and rx's...
-        return re.split(rx, s)
-    else:
-        return s.split(' ')
-
-
 if __name__ == '__main__':
     def test_ppjson():
         import datetime as dt
+        import uuid
 
         class Foo(object):
+            ''' some random class that implements as_json() '''
             fmt = '%a, %m %d %Y'
 
             def __init__(self, str, dob, z, flt):
@@ -117,23 +133,25 @@ if __name__ == '__main__':
                 self.dob = dob
                 self.z = z
                 self.flt = flt
+                self.uuid = uuid.uuid4()
 
             def as_json(self):
+                ''' as_json() must return a JSON-serializable version of self. '''
                 return {
                     'string': self.string,
                     'dob': self.dob.strftime(self.fmt),
                     'z': repr(self.z),
-                    'flt': self.flt
+                    'flt': self.flt,
+                    'flt3': repr(PrettyFloat(self.flt, 3)),
+                    'uuid_str': str(self.uuid),
                 }
 
         foo = Foo('fred', dt.datetime.now(), 3+2j, 23.238932)
-        print('foo: {}'.format(ppjson(foo, float_prec=1)))
-        print(F"foo.__dict__: {foo.__dict__}")
-        print(F"foo.__dict__.pretty: {ppjson(foo.__dict__, float_prec=3)}")
-        print(F"foo.__dict__: {foo.__dict__}")
+        print(F"foo: {ppjson(foo)}")
+        print(F"foo.__dict__.pretty (bypasses foo.as_json): {ppjson(foo.__dict__, float_prec=1)}")
 
         for p in range(10):
-            print(ppjson(foo, float_prec=p))
+            print(ppjson(3.14159254, float_prec=p))
     test_ppjson()
 
     def test_qw():
@@ -143,4 +161,4 @@ if __name__ == '__main__':
         print(qw(fodder, re.compile(r'[\s,]+')))
         print(qw(fodder, re.compile(r's')))
         print(qw(fodder, 's'))
-    # test_qw()
+#    test_qw()
