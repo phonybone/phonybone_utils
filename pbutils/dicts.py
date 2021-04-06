@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 
 
 def keystr(d, connector=', '):
@@ -56,6 +57,47 @@ def simple_diff(d1, d2):
     return missing_d2, missing_d1, diff_keys
 
 
+def json_to_object(data_str: str) -> SimpleNamespace:
+    ''' return a nested object based on a json string; can throw on bad data. '''
+    return json.loads(data_str, object_hook=lambda obj: SimpleNamespace(**obj))
+
+
 if __name__ == '__main__':
-    d = dict(this='that', these='those', n=None)
-    print(json.dumps(remove_nones(d)))
+    def test_remove_nones():
+        d = dict(this='that', these='those', n=None)
+        print(json.dumps(remove_nones(d)))
+
+    def test_json_to_object():
+        data_str = '''
+{
+  "this": "that",
+  "these": ["those", "them", "there"],
+  "bike_colors": {
+    "honda": "red", "ktm": "orange", "suzuki": "yellow", "kawasaki": "green"
+  },
+  "somelist": [
+    {
+      "id": 1,
+      "name": "joe",
+      "birthday": "Apr 1, 2001"
+    },
+    {
+      "id": 2,
+      "name": "frank",
+      "birthday": "June 1, 2001"
+    },
+    {
+      "id": 3,
+      "name": "mary",
+      "birthday": "May 1, 2001"
+    }
+  ]
+}
+'''
+        obj = json_to_object(data_str)
+        assert obj.this == 'that'
+        assert obj.bike_colors.honda == 'red'
+        assert obj.somelist[2].name == 'mary'
+        print('yay')
+
+    test_json_to_object()
