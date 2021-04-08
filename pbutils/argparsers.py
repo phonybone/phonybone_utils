@@ -44,7 +44,7 @@ def _assemble_config(opts, default_section_name='default'):
         try:
             config = get_config(opts.config, config_type='Raw')
         except OSError as e:
-            if e.errno is 2 and e.filename != _get_default_config_fn():
+            if e.errno == 2 and e.filename != _get_default_config_fn():
                 raise
             else:
                 config = get_config_from_data(f'[{default_section_name}]')
