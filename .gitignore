@@ -103,3 +103,5 @@ ENV/
 TAGS
 .pytest_cache
 *.db
+pbutils/request/profiles
+pbutils/request/data
