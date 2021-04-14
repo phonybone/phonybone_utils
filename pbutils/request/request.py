@@ -8,12 +8,19 @@ Requests are configured by supplying a profile.json file.
 Author: Victor Cassen
 vmc.swdev@gmail.com
 '''
+# todo:
+# - asyncio
+# add profile['n_count']
+# add path-param ranges (eg to iterate over /user/{id}
+# add onauth.py & jwt.py
+
 
 import os
 import json
 # import requests
 import logging
 import importlib
+import itertools as it
 
 from pbutils.argparsers import parser_stub, wrap_main
 
@@ -30,23 +37,51 @@ def main(config):
     reqs = []
     for profile in profiles:
         log.debug(F"profile: {json.dumps(profile, indent=4)}")
-        req = create_req_params(profile)
-        print(json.dumps(req, indent=4))
-        reqs.append(req)
+        # expand all template variables or other iteration data
+        for context in expand(profile):
+            req = create_req_params(profile, context)
+            print(json.dumps(req, indent=4))
+            reqs.append(req)
+
+def expand(profile):
+    '''
+    Identify all interpolated variables in the profile, then generate
+    and yield individual profile dict with interpolated values.
+    '''
+    # Identify interpolated vars:
+    var_iters = {}
+    for varname, varinfo in profile.get("vars", {}).items():
+        var_iters[varname] = make_var_iterator(varname, varinfo)
+
+    varnames = var_iters.keys()
+    for varvalues in it.product(*var_iters.values()):
+        yield dict(zip(varnames, varvalues))
 
 
-def create_req_params(profile):
-    '''
-    build and return a parameter dict based on the profile.
-    '''
+def make_var_iterator(varname, varinfo):
+    if 'range' in varinfo:
+        rangeinfo = varinfo['range']
+        start = rangeinfo.get('start', 0)
+        stop = rangeinfo['stop']
+        step = rangeinfo.get('step', 1)
+        return range(start, stop, step)
+    elif 'list' in varinfo:
+        return varinfo['list']
+    else:
+        raise RuntimeError(F"Don't know how to evaluate path_var {varname}")
+
+
+def create_req_params(profile, context):
+    ''' build and return a parameter dict based on the profile. '''
+    # need to figure out good way of being able to expand (almost)
+    # any entry in the profile (method, auth, timeout....)
     headers = {}
     req_data = None
     payload = None
 
-    url = profile['url']
-    params = profile.get("params", {})
+    url = profile['url'].format(**context)
+    params = {k:v.format(**context) for k,v in profile['params'].items()}
     timeout = float(profile.get('timeout', '1000.0'))
-
     method = profile['method'].upper()
     if method in {'POST', 'PUT', 'PATCH'}:
         content_type = profile.get('content-type', 'application/json')
@@ -83,9 +118,6 @@ def create_req_params(profile):
         print(F"request:\n{json.dumps(req_params, indent=4)}")
     return req_params
 
-    # if 'dryrun' not in profile:
-    #     response = requests.request(**req_params)
-    #     resp_report(response)
 
 def make_auth_header(auth_info):
     if "module" in auth_info:
