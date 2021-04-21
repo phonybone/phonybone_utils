@@ -1,3 +1,6 @@
 sqlalchemy
 future
 waitress
+asyncio
+aiohttp
+aiofile
