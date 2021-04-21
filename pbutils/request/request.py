@@ -47,10 +47,7 @@ async def amain(profiles):
 def request_task(req_params, session):
     ''' create an asyncio.task from the profile '''            
     async def do_request(req_params, session):
-        # return F"{req_params['method'].upper()} {req_params['url']}"
         output_path = req_params.pop('output_path', None)
-        log.debug(F"do_request.output_path: {output_path}")
-        log.debug(F"about to await {req_params['method']} {req_params['url']}")
 
         response = await session.request(**req_params)
         content = await response.text()
@@ -141,7 +138,7 @@ def create_request_params(profile, context):
         headers.update(make_auth_header(auth_info))
 
     output_path = profile.get('output_path', '').format(**context)
-    log.debug(F"crp.output_path: {output_path}")
+
     # assemble call to request:
     req_params = {
         'url': url,
