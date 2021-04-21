@@ -10,17 +10,17 @@ vmc.swdev@gmail.com
 '''
 # todo:
 # - asyncio
-# add profile['n_count']
-# add path-param ranges (eg to iterate over /user/{id}
 # add onauth.py & jwt.py
-
+# refactor create_request_params()
 
 import os
 import json
-# import requests
 import logging
 import importlib
 import itertools as it
+import asyncio
+import aiohttp
+from aiofile import async_open
 
 from pbutils.argparsers import parser_stub, wrap_main
 
@@ -33,32 +33,68 @@ def main(config):
     profiles = get_profiles(config.arg[0])
     if 'DEBUG' in os.environ:  # could have been set elsewhere besides profile
         log.setLevel(logging.DEBUG)
+    asyncio.run(amain(profiles))
 
-    reqs = []
+
+async def amain(profiles):
+    ''' . '''
+    async with aiohttp.ClientSession() as session:
+        tasks = [request_task(req_params, session) for req_params in expand_profiles(profiles)]
+        for task in asyncio.as_completed(tasks):
+            _ = await task
+
+
+def request_task(req_params, session):
+    ''' create an asyncio.task from the profile '''            
+    async def do_request(req_params, session):
+        # return F"{req_params['method'].upper()} {req_params['url']}"
+        output_path = req_params.pop('output_path', None)
+        log.debug(F"do_request.output_path: {output_path}")
+        log.debug(F"about to await {req_params['method']} {req_params['url']}")
+
+        response = await session.request(**req_params)
+        content = await response.text()
+
+        if output_path:
+            async with async_open(output_path, "w") as aoutput:
+                await aoutput.write(content)
+                log.info(F"{output_path} written")
+            req_params['output_path'] = output_path
+        else:
+            print(content)
+
+    return asyncio.create_task(do_request(req_params, session))
+
+
+def expand_profiles(profiles):
+    ''' generator to yield all request profiles '''
     for profile in profiles:
-        log.debug(F"profile: {json.dumps(profile, indent=4)}")
-        # expand all template variables or other iteration data
-        for context in expand(profile):
-            req = create_req_params(profile, context)
-            print(json.dumps(req, indent=4))
-            reqs.append(req)
+        for context in get_contexts(profile):
+            yield create_request_params(profile, context)
 
-def expand(profile):
+
+def get_contexts(profile):
     '''
     Identify all interpolated variables in the profile, then generate
     and yield individual profile dict with interpolated values.
     '''
-    # Identify interpolated vars:
-    var_iters = {}
-    for varname, varinfo in profile.get("vars", {}).items():
-        var_iters[varname] = make_var_iterator(varname, varinfo)
+    # add var "n_repeat" if present:
+    n_repeat = profile.pop('n_repeat', None)
+    if n_repeat:
+        profile.setdefault('vars', {})['n_repeat'] = {"range": {"stop": n_repeat}}
 
+    # collect one value iterator for each variable:
+    var_iters = {varname: make_var_iterator(varname, varinfo)
+                 for varname, varinfo in profile.pop("vars", {}).items()}
+
+    # yield var context for each set of values:
     varnames = var_iters.keys()
     for varvalues in it.product(*var_iters.values()):
         yield dict(zip(varnames, varvalues))
 
 
 def make_var_iterator(varname, varinfo):
+    ''' return an iterator for the variable "varname" with the info in varinfo '''
     if 'range' in varinfo:
         rangeinfo = varinfo['range']
         start = rangeinfo.get('start', 0)
@@ -66,13 +102,16 @@ def make_var_iterator(varname, varinfo):
         step = rangeinfo.get('step', 1)
         return range(start, stop, step)
     elif 'list' in varinfo:
-        return varinfo['list']
+        return iter(varinfo['list'])  # could be any iterable, really
     else:
         raise RuntimeError(F"Don't know how to evaluate path_var {varname}")
 
 
-def create_req_params(profile, context):
-    ''' build and return a parameter dict based on the profile. '''
+def create_request_params(profile, context):
+    '''
+    Build and return a parameter dict based on the profile,
+    which can then be used to call request().
+    '''
     # need to figure out good way of being able to expand (almost)
     # any entry in the profile (method, auth, timeout....)
     headers = {}
@@ -80,7 +119,7 @@ def create_req_params(profile, context):
     payload = None
 
     url = profile['url'].format(**context)
-    params = {k:v.format(**context) for k,v in profile['params'].items()}
+    params = {k: v.format(**context) for k,v in profile.get('params', {}).items()}
     timeout = float(profile.get('timeout', '1000.0'))
     method = profile['method'].upper()
     if method in {'POST', 'PUT', 'PATCH'}:
@@ -93,12 +132,16 @@ def create_req_params(profile, context):
             req_data = get_req_data(profile)
         elif 'payload' in profile:
             req_data = get_payload(profile)
+        else:
+            log.warning(F"no body for {method} {url}")
 
     # add auth header to headers if needed:
     if "auth" in profile:
         auth_info = profile["auth"]
         headers.update(make_auth_header(auth_info))
 
+    output_path = profile.get('output_path', '').format(**context)
+    log.debug(F"crp.output_path: {output_path}")
     # assemble call to request:
     req_params = {
         'url': url,
@@ -113,9 +156,11 @@ def create_req_params(profile, context):
         req_params['data'] = req_data
     if payload:
         req_params['payload'] = payload
+    if output_path:
+        req_params['output_path'] = output_path
 
     if 'debug' in profile:
-        print(F"request:\n{json.dumps(req_params, indent=4)}")
+        log.debug(F"request:\n{json.dumps(req_params, indent=4)}")
     return req_params
 
 
@@ -143,6 +188,10 @@ def make_auth_header(auth_info):
         raise RuntimeError("don't know how to make auth header")
 
 def get_req_data(profile):
+    '''
+    Extract the request data from the profile, reading from an indicated file
+    if necessary.  Return as json string.
+    '''
     req_data = profile['request_data']
     if isinstance(req_data, str):
         log.info(F"loading update data from {req_data}")
@@ -168,7 +217,7 @@ def get_profiles(profile_fn):
     with open(profile_fn) as prf:
         profiles = json.load(prf)
     if isinstance(profiles, dict):
-        profiles = [profiles]
+        profiles = [profiles]   # convert a single profile to a list length=1
     if not isinstance(profiles, list):
         raise ValueError(F"profile_fn: must contain list (got {type(profiles)})")
     return profiles
