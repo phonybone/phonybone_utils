@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+Create a JWT
+usage: mkjwt <data.json> <secret_key> <delta_amount> <delta_unit>
+'''
+import sys
+import json
+import datetime as dt
+
+from pbutils.jwt_util import create_jwt_token
+
+if __name__ == '__main__':
+    with open(sys.argv[1]) as data_stream:
+        jwt_content = json.load(data_stream)
+
+    secret_key = sys.argv[2]
+    delta = {sys.argv[4]: int(sys.argv[3])}  # eg 60 "minutes"
+    expires_delta = dt.timedelta(**delta)
+    enc_token = create_jwt_token(jwt_content=jwt_content, secret_key=secret_key, expires_delta=expires_delta)
+    print(enc_token)
