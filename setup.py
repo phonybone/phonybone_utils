@@ -20,7 +20,7 @@ setup(
     name="phonybone_utils",
     version=version,
     packages=find_packages(),
-    scripts=['bin/version_bump'],
+    scripts=['bin/version_bump', 'bin/arequest'],
 
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine

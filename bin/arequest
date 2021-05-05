@@ -13,6 +13,7 @@ vmc.swdev@gmail.com
 # add onauth.py & jwt.py
 # refactor create_request_params()
 
+import sys
 import os
 import json
 import logging
@@ -25,19 +26,23 @@ from aiofile import async_open
 from pbutils.argparsers import parser_stub, wrap_main
 
 # from resp_report import resp_report
-from logs import log
+from pbutils.request.logs import log
 
+if sys.version_info < (3,7):
+    print("Sorry, you need python 3.7 or better to run this script", file=sys.stdout)
+    sys.exit(1)
 
 def main(config):
-    # read url, params, timeout, header(s), request body, all as needed
-    profiles = get_profiles(config.arg[0])
-    if 'DEBUG' in os.environ:  # could have been set elsewhere besides profile
+    ''' main entry point '''
+    if 'DEBUG' in os.environ:
         log.setLevel(logging.DEBUG)
+
+    profiles = get_profiles(config.arg[0])
     asyncio.run(amain(profiles))
 
 
 async def amain(profiles):
-    ''' . '''
+    ''' create a task for each expanded profile '''
     async with aiohttp.ClientSession() as session:
         tasks = [request_task(req_params, session) for req_params in expand_profiles(profiles)]
         for task in asyncio.as_completed(tasks):
@@ -73,7 +78,7 @@ def expand_profiles(profiles):
 def get_contexts(profile):
     '''
     Identify all interpolated variables in the profile, then generate
-    and yield individual profile dict with interpolated values.
+    and yield individual context dict with interpolated values.
     '''
     # add var "n_repeat" if present:
     n_repeat = profile.pop('n_repeat', None)
@@ -91,7 +96,7 @@ def get_contexts(profile):
 
 
 def make_var_iterator(varname, varinfo):
-    ''' return an iterator for the variable "varname" with the info in varinfo '''
+    ''' create an iterator for the variable "varname" with the info in varinfo '''
     if 'range' in varinfo:
         rangeinfo = varinfo['range']
         start = rangeinfo.get('start', 0)
@@ -119,6 +124,7 @@ def create_request_params(profile, context):
     params = {k: v.format(**context) for k,v in profile.get('params', {}).items()}
     timeout = float(profile.get('timeout', '1000.0'))
     method = profile['method'].upper()
+    log.debug(F"url: {method} {url}")
     if method in {'POST', 'PUT', 'PATCH'}:
         content_type = profile.get('content-type', 'application/json')
         content_header = {'Content-type': content_type}
@@ -162,6 +168,7 @@ def create_request_params(profile, context):
 
 
 def make_auth_header(auth_info):
+    ''' Return a one-element dict: "Authorization": <token> '''
     if "module" in auth_info:
         auth_mod_name = auth_info.get("module", "onauth")
         auth_module = importlib.import_module(auth_mod_name)
@@ -211,6 +218,7 @@ def get_payload(profile):
 
 
 def get_profiles(profile_fn):
+    ''' read and return list of profiles from file '''
     with open(profile_fn) as prf:
         profiles = json.load(prf)
     if isinstance(profiles, dict):
