@@ -3,7 +3,6 @@ import os
 import re
 from contextlib import contextmanager
 import subprocess
-from future.utils import iteritems
 from functools import partial
 
 from pbutils.strings import qw
@@ -157,7 +156,7 @@ def gather_input(prompts):
             if 'validation_help' in info:
                 print(info['validation_help'])
 
-    for key, info in iteritems(prompts):
+    for key, info in prompts.items():
         if 'value' not in info:
             _get_value(key, info)
 

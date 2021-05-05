@@ -2,6 +2,7 @@ from collections import defaultdict, Counter
 
 
 def groupCount(it, f=None):
+    ''' don't use this: use collections.Counter '''
     if f is None:
         def f(x):
             return x
@@ -18,7 +19,7 @@ def groupBy(it, f=None):
     Each value in the dict is a list of the grouped elements.
     If the function is None, then the key value is used as the function.
 
-    Example:
+    You should really use itertools.groupby instead
     '''
     if f is None:
         def f(x):
