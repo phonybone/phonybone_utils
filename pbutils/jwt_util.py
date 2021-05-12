@@ -16,5 +16,3 @@ def create_jwt_token(
     expire = dt.datetime.utcnow() + expires_delta
     to_encode.update(dict(exp=expire, sub=jwt_subject))
     return standard_jwt.encode(to_encode, secret_key, algorithm=algorithm)
-
-
