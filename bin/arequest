@@ -34,19 +34,33 @@ if sys.version_info < (3,7):
 
 def main(config):
     ''' main entry point '''
+    arun_kwargs = {}
     if 'DEBUG' in os.environ:
         log.setLevel(logging.DEBUG)
+        arun_kwargs['debug'] = True
 
     profiles = get_profiles(config.arg[0])
-    asyncio.run(amain(profiles))
+    asyncio.run(amain(profiles), **arun_kwargs)
+
+
+def global_exception_handler(loop, signal=None):
+    log.warning("global_exception_handler entered")    
+    if signal:
+        log.info(F"Received signal {signal}")
 
 
 async def amain(profiles):
     ''' create a task for each expanded profile '''
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(global_exception_handler)
+
     async with aiohttp.ClientSession() as session:
         tasks = [request_task(req_params, session) for req_params in expand_profiles(profiles)]
         for task in asyncio.as_completed(tasks):
-            _ = await task
+            try:
+                _ = await task
+            except Exception as e:
+                print(F"caught {type(e)}: {e}")
 
 
 def request_task(req_params, session):
