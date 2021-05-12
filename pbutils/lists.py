@@ -1,9 +1,12 @@
+''' Helper functions for lists '''
 def grow(l, n, f):
+    ''' extend a list by n elements; each element created by function f (no params) '''
     filler = [f() for _ in range(n)]
     l.extend(filler)
 
 
 def grow_to(l, n, fill=None):
+    ''' like grow(), but cap the length of the list at n elements '''
     amount = n - len(l)
     if amount > 0:
         grow(l, amount, fill)
@@ -24,7 +27,17 @@ def flatten(l):
     return list(sum(l, ()))
 
 
+def first_match(itr, match=lambda x: True, default=None):
+    '''
+    Return the first element of itr where match(elem) is True,
+    or default if no match.
+    '''
+    return next((x for x in itr if match(x)), default)
+
+
 if __name__ == '__main__':
+    import sys
+
     def test_grow_to():
         lol = [[] for _ in range(3)]
         assert(len(lol) == 3)
@@ -46,4 +59,17 @@ if __name__ == '__main__':
         assert(len(l6) == 3)
         assert l6 is lol[5]
 
+    def test_first_match():
+        itr = tuple(range(20))   # wrap in tuple() for immutability
+        assert first_match(itr) == 0
+        assert first_match(itr, lambda x: x & 1 == 0) == 0
+        assert first_match(itr, lambda x: x & 1 == 1) == 1
+        assert first_match(itr, lambda x: x == 13) == 13
+        assert first_match(itr, lambda x: x == 34) is None
+        assert first_match(itr, lambda x: x == 3, 'fred') == 3
+        assert first_match(itr, lambda x: x == 34, 'fred') == 'fred'
+
+    f = locals()[sys.argv[1]]
+    args = sys.argv[2:]
+    f(*args)
     print('yay')
