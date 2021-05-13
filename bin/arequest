@@ -29,13 +29,14 @@ from pbutils.jwt_util import create_jwt_token
 
 # from resp_report import resp_report
 from pbutils.request.logs import log
+from pbutils.streams import die
 
-if sys.version_info < (3,7):
-    print("Sorry, you need python 3.7 or better to run this script", file=sys.stdout)
-    sys.exit(1)
 
 def main(config):
     ''' main entry point '''
+    if sys.version_info < (3,7):
+        die("Sorry, you need python 3.7 or better to run this script")
+
     arun_kwargs = {}
     if 'DEBUG' in os.environ:
         log.setLevel(logging.DEBUG)
