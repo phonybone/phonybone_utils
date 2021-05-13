@@ -1,7 +1,6 @@
+import datetime as dt
 import json
-
-from app.services import jwt
-from app.models.domain.users import User
+from pbutils.jwt_util import create_jwt_token
 
 
 def make_auth_header(profile):
@@ -17,10 +16,14 @@ def make_auth_header(profile):
 
 
 def make_onroute_auth_header(auth_info):
-    email = auth_info['email']
-    account = auth_info['account']
-    test_user = User(email=email, accounts=account, is_zonar=False)
-    token = jwt.create_access_token_for_user(test_user, "Zonar!") 
+    content = dict(
+        email=auth_info['email'],
+        account=auth_info['account'],
+        is_zonar=False,
+        sub="access"            # according to onroute-api/app/core/config.py
+    )
+    expires = dt.timedelta(minutes=60*24*7)
+    token = create_jwt_token(jwt_content=content, secret_key='Zonar!', expires_delta=expires)
     return {'Authorization': f'ONROUTE {token}'}
 
 
@@ -35,7 +38,6 @@ def make_rtb_auth_header(auth_info):
 if __name__ == '__main__':
     # Generate ONROUTE token with email & account, store json to file
     import sys
-    import json
 
     email = sys.argv[1]
     account_code = sys.argv[2]
@@ -45,4 +47,3 @@ if __name__ == '__main__':
     with open(fn, "w") as f:
         print(json.dumps(header, indent=4), file=f)
         print(F"{fn} written")
-    
