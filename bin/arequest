@@ -22,8 +22,10 @@ import itertools as it
 import asyncio
 import aiohttp
 from aiofile import async_open
+from pathlib import Path
 
 from pbutils.argparsers import parser_stub, wrap_main
+from pbutils.jwt_util import create_jwt_token
 
 # from resp_report import resp_report
 from pbutils.request.logs import log
@@ -185,17 +187,22 @@ def make_auth_header(auth_info):
     ''' Return a one-element dict: "Authorization": <token> '''
     if "module" in auth_info:
         auth_mod_name = auth_info.get("module", "onauth")
+        if 'sys_paths' in auth_info:
+            # this allows for relative paths (eg ".") to be included
+            sys.path.extend(str(Path(path).resolve()) for path in auth_info['sys_paths'])
         auth_module = importlib.import_module(auth_mod_name)
         ahf_name = auth_info.get("auth_header_function", "make_auth_header")
         make_auth_header = getattr(auth_module, ahf_name)
         return make_auth_header(auth_info)
 
     elif "token_file" in auth_info:
+        # token_file should contain a json dict w/keys 'token_type' and 'access_token'
         with open(auth_info['token_file']) as tkn:
             token_info = json.load(tkn)
             return {"Authorization": F"{token_info['token_type']} {token_info['access_token']}"}
 
     elif "header_file" in auth_info:  # auth header in .json file
+        # header_file should contain a json dict {"Authorization": "<token>"}
         with open(auth_info['header_file']) as hf:
             return json.load(hf)
 
