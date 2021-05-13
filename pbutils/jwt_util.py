@@ -1,6 +1,6 @@
 import datetime as dt
 from typing import Dict
-import jwt as standard_jwt
+import jwt
 
 
 def create_jwt_token(
@@ -15,4 +15,29 @@ def create_jwt_token(
     to_encode = jwt_content.copy()
     expire = dt.datetime.utcnow() + expires_delta
     to_encode.update(dict(exp=expire, sub=jwt_subject))
-    return standard_jwt.encode(to_encode, secret_key, algorithm=algorithm)
+    return jwt.encode(to_encode, secret_key, algorithm=algorithm)
+
+
+if __name__ == '__main__':
+    import sys
+    import json
+
+    def test_create_jwt_token():
+        content = {
+            "email": "victor@testenv.com",
+            "account": "dbr47_rep1023"
+        }
+        expires = dt.timedelta(minutes=60)
+        secret_key = 'some secret'
+        token = create_jwt_token(jwt_content=content,
+                                 jwt_subject='some subject',
+                                 secret_key=secret_key,
+                                 expires_delta=expires)
+
+        content_dec = jwt.decode(token, secret_key)
+        print(json.dumps(content_dec, indent=4))
+
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+    method = locals()[cmd]
+    method(*args)
