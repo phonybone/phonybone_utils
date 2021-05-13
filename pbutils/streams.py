@@ -36,8 +36,10 @@ def get_input_stream(filename):
 warn = partial(print, file=sys.stderr)
 
 
-def die(msg):
-    raise RuntimeError(msg)
+def die(msg, exit_code=1):
+    warn(msg)
+    sys.exit(exit_code)
+    # raise RuntimeError(msg)
 
 
 def records(stream, delimiter):
