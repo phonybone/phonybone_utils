@@ -22,12 +22,11 @@ import itertools as it
 import asyncio
 import aiohttp
 import requests
+from numbers import Number
 from aiofile import async_open
 from pathlib import Path
 
 from pbutils.argparsers import parser_stub, wrap_main
-
-# from resp_report import resp_report
 from pbutils.request.logs import log
 from pbutils.streams import die
 
@@ -146,16 +145,24 @@ def get_contexts(profile):
 
 def make_var_iterator(varname, varinfo):
     ''' create an iterator for the variable "varname" with the info in varinfo '''
+    if isscalar(varinfo):
+        return [varinfo]
+
     if 'range' in varinfo:
         rangeinfo = varinfo['range']
         start = rangeinfo.get('start', 0)
         stop = rangeinfo['stop']
         step = rangeinfo.get('step', 1)
         return range(start, stop, step)
-    elif 'list' in varinfo:
+
+    if 'list' in varinfo:
         return iter(varinfo['list'])  # could be any iterable, really
-    else:
-        raise RuntimeError(F"Don't know how to evaluate path_var {varname}")
+
+    raise RuntimeError(F"Don't know how to evaluate path_var {varname}")
+
+
+def isscalar(x):
+    return isinstance(x, str) or isinstance(x, Number) or isinstance(x, bool)
 
 
 def create_request_params(profile, context):
