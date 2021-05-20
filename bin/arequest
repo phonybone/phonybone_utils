@@ -53,7 +53,7 @@ def run(profiles):
     with requests.Session() as session:
         for req_params in expand_profiles(profiles):
             do_request(req_params, session)
-    
+
 
 def do_request(req_params, session):
     output_path = req_params.pop('output_path', None)
