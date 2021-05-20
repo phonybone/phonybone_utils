@@ -4,3 +4,4 @@ waitress
 asyncio
 aiohttp
 aiofile
+requests
