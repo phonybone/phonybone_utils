@@ -6,10 +6,10 @@ import jwt
 def create_jwt_token(
         *,                      # kwargs only
         jwt_content: Dict[str, str],
-        jwt_subject: str='access',
+        jwt_subject: str,
         secret_key: str,
         expires_delta: dt.timedelta,
-        algorithm: str='HS256',
+        algorithm: str='HS256'
 ) -> str:
     """ Create a JWT, currently used in testing, but could be used for the app itself """
     to_encode = jwt_content.copy()
@@ -36,6 +36,9 @@ if __name__ == '__main__':
 
         content_dec = jwt.decode(token, secret_key)
         print(json.dumps(content_dec, indent=4))
+
+    def decode(token, secret='Zonar!', algorithm='HS256'):
+        print(json.dumps(jwt.decode(token, secret, algorithm), indent=4))
 
     cmd = sys.argv[1]
     args = sys.argv[2:]
