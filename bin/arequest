@@ -22,6 +22,7 @@ import itertools as it
 import asyncio
 import aiohttp
 import requests
+from copy import deepcopy
 from numbers import Number
 from aiofile import async_open
 from pathlib import Path
@@ -29,6 +30,7 @@ from pathlib import Path
 from pbutils.argparsers import parser_stub, wrap_main
 from pbutils.request.logs import log
 from pbutils.streams import die
+from pbutils.dicts import traverse_json, set_path_value
 
 
 def main(config):
@@ -62,7 +64,7 @@ def do_request(req_params, session):
         content = response.json()
         content = json.dumps(content, indent=4)
     except Exception:
-        content = response.text()
+        content = response.text
 
     if output_path:
         with open(output_path, "w") as output:
@@ -165,6 +167,20 @@ def isscalar(x):
     return isinstance(x, str) or isinstance(x, Number) or isinstance(x, bool)
 
 
+def populate_profile(profile, context):
+    ''' 
+    Traverse profile; extrapolate any leaf of type str using context.
+    Return a new profile based on old.
+    '''
+    pprofile = deepcopy(profile)
+    for path, value in traverse_json(profile, only_leaves=True):
+        if isinstance(value, str) and '{' in value:
+            value = value.format(**context)
+            set_path_value(pprofile, path, value)
+            print(F"updated {path}={value}")
+    return pprofile
+
+
 def create_request_params(profile, context):
     '''
     Build and return a parameter dict based on the profile,
@@ -176,8 +192,10 @@ def create_request_params(profile, context):
     req_data = None
     payload = None
 
-    url = profile['url'].format(**context)
-    params = {k: v.format(**context) for k,v in profile.get('params', {}).items()}
+    profile = populate_profile(profile, context)
+
+    url = profile['url']
+    params = profile.get('params')
     timeout = float(profile.get('timeout', '1000.0'))
     method = profile['method'].upper()
     log.debug(F"url: {method} {url}")
@@ -196,10 +214,9 @@ def create_request_params(profile, context):
 
     # add auth header to headers if needed:
     if "auth" in profile:
-        auth_info = profile["auth"]
-        headers.update(make_auth_header(auth_info))
+        headers.update(make_auth_header(profile["auth"]))
 
-    output_path = profile.get('output_path', '').format(**context)
+    output_path = profile.get('output_path')
 
     # assemble call to request:
     req_params = {
