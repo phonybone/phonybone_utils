@@ -3,7 +3,6 @@ import re
 
 
 if sys.version_info[0] == 2:
-    from future.utils import viewitems
     import ConfigParser as CP
 elif sys.version_info[0] == 3:
     import configparser as CP
@@ -66,7 +65,9 @@ def get_config_from_data(config_data, defaults={}, config_type='Raw', def_sectio
         clsname = config_type + 'ConfigParser'
     cls = getattr(CP, clsname)
     config = cls(defaults=defaults)
-    config.__class__ = type('ConfigParserPB', (cls, attrInterface), {'__init__': attrInterface.__init__})
+    config.__class__ = type('ConfigParserPB',
+                            (cls, attrInterface),
+                            {'__init__': attrInterface.__init__})
     config.def_section = def_section
 
     config.read_string(config_data)
