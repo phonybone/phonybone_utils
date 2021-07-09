@@ -22,20 +22,24 @@ if __name__ == '__main__':
     import sys
     import json
 
-    def test_create_jwt_token():
+    def create_onroute_jwt(email="victor@testenv.com",
+                           account="dbr47_rep1023",
+                           jwt_subject='access',
+                           secret_key='Zonar!',
+                           algorithm='HS256',
+                           expires_in_mins=10090):  # one week
         content = {
-            "email": "victor@testenv.com",
-            "account": "dbr47_rep1023"
+            "email": email,
+            "account": account,
+            "is_zonar": True,
         }
-        expires = dt.timedelta(minutes=60)
-        secret_key = 'some secret'
+        expires = dt.timedelta(minutes=expires_in_mins)
         token = create_jwt_token(jwt_content=content,
-                                 jwt_subject='some subject',
+                                 jwt_subject=jwt_subject,
                                  secret_key=secret_key,
                                  expires_delta=expires)
 
-        content_dec = jwt.decode(token, secret_key)
-        print(json.dumps(content_dec, indent=4))
+        print(token)
 
     def decode(token, secret='Zonar!', algorithm='HS256'):
         print(json.dumps(jwt.decode(token, secret, algorithm), indent=4))
