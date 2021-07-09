@@ -114,11 +114,25 @@ def set_path_value(data, path, value):
     root[path[-1]] = value
 
 
+def create_path_value(data, path, value):
+    '''
+    Similar to set_path_value, but creates new dicts as needed.
+    Does not work for type(int) values in path (which would normally
+    be considered list indexes).
+    '''
+    root = data
+    for elem in path[:-1]:
+        root = root.setdefault(elem, {})
+    root[path[-1]] = value
+
+
 def is_scalar(thing):
-    return isinstance(thing, (str, bytes, int, float, bool))
+    return isinstance(thing, (str, bytes, int, float, bool)) or thing is None
 
 
 if __name__ == '__main__':
+    import sys
+
     def test_remove_nones():
         d = dict(this='that', these='those', n=None)
         print(json.dumps(remove_nones(d)))
@@ -156,4 +170,18 @@ if __name__ == '__main__':
         assert obj.somelist[2].name == 'mary'
         print('yay')
 
-    test_json_to_object()
+    def test_create_path_value():
+        data = {}
+        create_path_value(data, ['this', 'these'], 'those')
+        create_path_value(data, ['this', 'those'], 'blah')
+        create_path_value(data, ['this', 'them', 'whatevs'], 'these')
+        create_path_value(data, ['those'], 'these')
+        create_path_value(data, ['list'], [None])  # this is pretty hacky, but...
+        create_path_value(data, ['list', 0], 'fart')
+        
+        print(json.dumps(data, indent=4))
+
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+    method = locals()[cmd]
+    method(*args)
