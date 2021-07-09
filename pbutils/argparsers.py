@@ -97,7 +97,12 @@ def wrap_main(main, parser, args=sys.argv[1:]):
 def parser_config(parser, config):
     '''
     Use sections/values from the config file to initialize an argparser.
-    One cmd-line arg per config section.
+    One cmd-line arg per config section; that is, each section contains
+    all the args needed for a call to parser.add_argument()
+
+    Example:
+    names = ['-x', '--some-option']
+    section = {'type': int, 'action': 'store_true', etc} (Note: conflict)
     '''
     for section in config.sections():
         section_dict = to_dict(config, section)
@@ -159,7 +164,6 @@ if __name__ == '__main__':
 
         if opts_ini:
             opts_config = get_config(opts_ini)
-            parser_config(parser, opts_config)
         parser.add_argument('-v', action='store_true', help='verbose')
         parser.add_argument('-d', action='store_true', help='debugging flag')
 
