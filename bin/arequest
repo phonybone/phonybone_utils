@@ -24,11 +24,14 @@ import requests
 from copy import deepcopy
 from aiofile import async_open
 from pathlib import Path
+from functools import partial
 
 from pbutils.argparsers import parser_stub, wrap_main
 from pbutils.request.logs import log
 from pbutils.streams import die
 from pbutils.dicts import traverse_json, set_path_value, is_scalar
+
+json4 = partial(json.dumps, indent=4)
 
 
 def main(config):
@@ -55,12 +58,12 @@ def run(profiles):
 
 
 def do_request(req_params, session):
+    ''' Issue request synchronously; capture output if requested '''
     output_path = req_params.pop('output_path', None)
-
+    
     response = session.request(**req_params)
     try:
-        content = response.json()
-        content = json.dumps(content, indent=4)
+        content = json4(response.json())
     except Exception:
         content = response.text
 
@@ -68,7 +71,7 @@ def do_request(req_params, session):
         with open(output_path, "w") as output:
             output.write(content)
             log.info(F"{output_path} written")
-        req_params['output_path'] = output_path
+        req_params['output_path'] = output_path  # restore this because the next request might need it
     else:
         print(content)
 
@@ -101,7 +104,7 @@ def request_task(req_params, session):
         response = await session.request(**req_params)
         try:
             content = await response.json()
-            content = json.dumps(content, indent=4)
+            content = json4(content)
         except Exception:
             content = await response.text()
 
@@ -229,9 +232,13 @@ def create_request_params(profile, context):
         req_params['output_path'] = output_path
 
     if 'debug' in profile:
-        log.debug(F"request:\n{json.dumps(req_params, indent=4)}")
+        log.debug(F"request:\n{json4(req_params)}")
     return req_params
 
+
+def as_curl(req_params):
+    ''' render request as a curl command '''
+    pass
 
 def make_auth_header(auth_info):
     ''' Return a one-element dict: "Authorization": <token> '''
@@ -246,7 +253,7 @@ def make_auth_header(auth_info):
         auth_header = make_auth_header(auth_info)
 
         if auth_info.get('log_token', False):
-            log.info(json.dumps(auth_header, indent=4))
+            log.info(json4(auth_header))
         return auth_header
 
     elif "token_file" in auth_info:
@@ -279,7 +286,7 @@ def get_req_data(profile):
             req_data = json.load(upd)
             log.info("  data loaded")
     assert type(req_data) in (list, dict, str)
-    req_data = json.dumps(req_data)  # only required for JSONB fields? or always?
+    req_data = json4(req_data)  # only required for JSONB fields? or always?
     return req_data
 
 def get_payload(profile):
