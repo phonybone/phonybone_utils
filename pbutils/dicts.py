@@ -1,5 +1,8 @@
 import json
 from types import SimpleNamespace
+from functools import partial
+
+json4 = partial(json.dumps, indent=4)
 
 
 def keystr(d, connector=', '):
