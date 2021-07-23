@@ -7,7 +7,7 @@ import importlib
 from copy import deepcopy
 from pathlib import Path
 import json
-
+from urllib.parse import urlencode
 
 from pbutils.dicts import is_scalar, traverse_json, set_path_value, json4
 from pbutils.request.logs import log
@@ -78,16 +78,16 @@ def create_request_params(profile, context):
     '''
     # need to figure out good way of being able to expand (almost)
     # any entry in the profile (method, auth, timeout....)
-    headers = {}
     req_data = None
     payload = None
 
     profile = populate_profile(profile, context)
 
     url = profile['url']
+    method = profile['method'].upper()
+    headers = profile.get('headers', {})
     params = profile.get('params')
     timeout = float(profile.get('timeout', '1000.0'))
-    method = profile['method'].upper()
     log.debug(F"url: {method} {url}")
     if method in {'POST', 'PUT', 'PATCH'}:
         content_type = profile.get('content-type', 'application/json')
@@ -127,6 +127,7 @@ def create_request_params(profile, context):
 
     if 'debug' in profile:
         log.debug(F"request:\n{json4(req_params)}")
+    log.debug(as_curl(req_params))
     return req_params
 
 
@@ -190,3 +191,16 @@ def get_payload(profile):
     else:
         req_data = profile['payload']
     return req_data
+
+
+def as_curl(req_params):
+    cmd = ['curl', '--location', '--request', req_params['method']]
+    url = req_params['url']
+    if 'params' in req_params:
+        url += '?' + urlencode(req_params['params'])
+    cmd.append(url)
+
+    for key, value in req_params.get('headers', {}).items():
+        cmd.append(F"--header '{key}: {value}'")
+
+    return " \\\n".join(cmd)
