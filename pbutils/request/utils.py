@@ -13,10 +13,14 @@ from pbutils.dicts import is_scalar, traverse_json, set_path_value, json4
 from pbutils.request.logs import log
 
 
-def expand_profiles(profiles):
+def expand_profiles(profiles, environ=None):
     ''' generator to yield all request profiles '''
     for profile in profiles:
+        if not isinstance(profile, dict):
+            raise TypeError(F"profile is not a dict ({type(profile)})")
         for context in get_contexts(profile):
+            if isinstance(environ, dict):
+                context.update(environ)
             yield create_request_params(profile, context)
 
 
@@ -59,7 +63,7 @@ def make_var_iterator(varname, varinfo):
 
 
 def populate_profile(profile, context):
-    ''' 
+    '''
     Traverse profile; extrapolate any leaf of type str using context.
     Return a new profile based on old.
     '''
@@ -114,6 +118,7 @@ def create_request_params(profile, context):
         'method': method,
         'timeout': timeout
     }
+
     if params:
         req_params['params'] = params
     if headers:
@@ -164,6 +169,7 @@ def make_auth_header(auth_info):
     else:
         raise RuntimeError("don't know how to make auth header")
 
+
 def get_req_data(profile):
     '''
     Extract the request data from the profile, reading from an indicated file
@@ -176,9 +182,10 @@ def get_req_data(profile):
         with open(fn) as upd:
             req_data = json.load(upd)
             log.info("  data loaded")
-    assert type(req_data) in (list, dict, str)
-    req_data = json4(req_data)  # only required for JSONB fields? or always?
+    if type(req_data) not in (list, dict, str):
+        raise TypeError(type(req_data))
     return req_data
+
 
 def get_payload(profile):
     # while payload is meant for other types, eg application/octet-stream
@@ -203,4 +210,5 @@ def as_curl(req_params):
     for key, value in req_params.get('headers', {}).items():
         cmd.append(F"--header '{key}: {value}'")
 
-    return " \\\n".join(cmd)
+    # --data goes here
+    return " \\\n".join(cmd)    # one part of cmd[] per line, with trailing '\'s
