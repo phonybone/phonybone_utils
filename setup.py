@@ -1,19 +1,9 @@
-import sys
-import os
 from setuptools import setup, find_packages
 
 from pbutils import version
 
 with open('requirements.txt') as reqs:
     deps = reqs.readlines()
-
-if sys.version_info[0] == 2:
-    deps += ['mysql', 'mysql-connector', 'ConfigParser']
-elif sys.version_info[0] == 3:
-    deps += ['pymysql', 'configparser']
-
-
-sys.path.append(os.path.dirname(__file__))
 
 
 setup(
@@ -25,13 +15,6 @@ setup(
     # Project uses reStructuredText, so ensure that the docutils get
     # installed or upgraded on the target machine
     install_requires=deps,
-
-    # package_data={
-    #     # If any package contains *.txt or *.rst files, include them:
-    #     '': ['*.txt', '*.rst'],
-    #     # And include any *.msg files found in the 'hello' package, too:
-    #     'hello': ['*.msg'],
-    # },
 
     # metadata for upload to PyPI
     author="Victor Cassen",
