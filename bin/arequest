@@ -10,7 +10,9 @@ vmc.swdev@gmail.com
 '''
 # todo:
 # better handling of exceptions in async
-# refactor into callable module
+# handle response from arun
+# re-implement output_path (return profile from run? ugh)
+
 
 import sys
 import os
@@ -21,6 +23,7 @@ import asyncio
 from pbutils.argparsers import parser_stub, wrap_main
 from pbutils.request.logs import log
 from pbutils.streams import die
+from pbutils.dicts import json4
 from pbutils.request.sync_req import run
 from pbutils.request.async_req import arun
 
@@ -39,12 +42,12 @@ def main(config):
     if config.do_async:
         asyncio.run(arun(profiles), **arun_kwargs)
     else:
-        run(profiles)
+        for response in run(profiles):
+            try:
+                print(json4(response))
+            except Exception:
+                print(response)
 
-
-def as_curl(req_params):
-    ''' render request as a curl command '''
-    pass
 
 def get_profiles(profile_fn):
     ''' read and return list of profiles from file '''
