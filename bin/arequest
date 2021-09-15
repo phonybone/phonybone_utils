@@ -23,7 +23,7 @@ import asyncio
 from pbutils.argparsers import parser_stub, wrap_main
 from pbutils.request.logs import log
 from pbutils.streams import die
-from pbutils.request.sync_req import run
+from pbutils.request.sync_req import run_sync
 from pbutils.request.async_req import arun
 
 
@@ -41,16 +41,7 @@ def main(config):
     if config.do_async:
         asyncio.run(arun(profiles), **arun_kwargs)
     else:
-        for response in run(profiles):
-            try:
-                content = response.json()
-            except Exception:
-                content = response.text
-
-            if 200 <= response.status_code <= 299:
-                print(content)
-            else:
-                print(F"{response.request.url}: {response.status_code}\n{content}")
+        run_sync(profiles)
 
 def get_profiles(profile_fn):
     ''' read and return list of profiles from file '''
