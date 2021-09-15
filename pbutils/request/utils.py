@@ -82,35 +82,31 @@ def create_request_params(profile, context):
     '''
     # need to figure out good way of being able to expand (almost)
     # any entry in the profile (method, auth, timeout....)
-    req_data = None
-    payload = None
 
     profile = populate_profile(profile, context)
 
     url = profile['url']
     method = profile['method'].upper()
     headers = profile.get('headers', {})
-    params = profile.get('params')
+    params = profile.get('params')  # querystring params
     timeout = float(profile.get('timeout', '1000.0'))
     log.debug(F"url: {method} {url}")
-    if method in {'POST', 'PUT', 'PATCH'}:
-        content_type = profile.get('content-type', 'application/json')
-        content_header = {'Content-type': content_type}
-        headers.update(**content_header)
-
-        # request_data is meant for json data:
-        if 'request_data' in profile:
-            req_data = get_req_data(profile)
-        elif 'payload' in profile:
-            req_data = get_payload(profile)
-        else:
-            log.warning(F"no body for {method} {url}")
+    if 'body' in profile:
+        mimetype = headers.get('Content-type') or headers.get('content-type') or headers.get('Content-type')
+        body = get_body(profile, mimetype)
+        if mimetype is None:
+            if isinstance(body, str):
+                mimetype = headers['Content-type'] = 'text/plain'
+            else:
+                mimetype = headers['Content-type'] = 'application/json'
+        if mimetype == 'application/json':
+            body = json.dumps(body)
+    else:
+        body = None
 
     # add auth header to headers if needed:
     if "auth" in profile:
         headers.update(make_auth_header(profile["auth"]))
-
-    output_path = profile.get('output_path')
 
     # assemble call to request:
     req_params = {
@@ -123,12 +119,8 @@ def create_request_params(profile, context):
         req_params['params'] = params
     if headers:
         req_params['headers'] = headers
-    if req_data:
-        req_params['data'] = req_data
-    if payload:
-        req_params['payload'] = payload
-    if output_path:
-        req_params['output_path'] = output_path
+    if body:
+        req_params['data'] = body
 
     if 'debug' in profile:
         log.debug(F"request:\n{json4(req_params)}")
@@ -158,7 +150,7 @@ def make_auth_header(auth_info):
             token_info = json.load(tkn)
             return {"Authorization": F"{token_info['token_type']} {token_info['access_token']}"}
 
-    elif "header_file" in auth_info:  # auth header in .json file
+    elif "header_file" in auth_info:
         # header_file should contain a json dict {"Authorization": "<token>"}
         with open(auth_info['header_file']) as hf:
             return json.load(hf)
@@ -170,34 +162,13 @@ def make_auth_header(auth_info):
         raise RuntimeError("don't know how to make auth header")
 
 
-def get_req_data(profile):
-    '''
-    Extract the request data from the profile, reading from an indicated file
-    if necessary.  Return as json string.
-    '''
-    req_data = profile['request_data']
-    if isinstance(req_data, str) and req_data.startswith('@'):
-        log.info(F"loading update data from {req_data}")
-        fn = req_data[1:]       # skip leading '@'
-        with open(fn) as upd:
-            req_data = json.load(upd)
-            log.info("  data loaded")
-    if type(req_data) not in (list, dict, str):
-        raise TypeError(type(req_data))
-    return req_data
+def get_body(profile, mimetype):
+    body = profile['body']
+    if isinstance(body, str) and body.startswith('@'):
+        with open(body[1:]) as fyle:
+            body = fyle.read()
 
-
-def get_payload(profile):
-    # while payload is meant for other types, eg application/octet-stream
-    if isinstance(profile['payload'], dict):
-        return profile['payload']
-    if profile['payload'].startswith('@file:'):
-        filename = profile['payload'].replace('@file:', '').strip()
-        with open(filename) as f:
-            req_data = f.read()
-    else:
-        req_data = profile['payload']
-    return req_data
+    return body
 
 
 def as_curl(req_params):
