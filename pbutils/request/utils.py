@@ -15,13 +15,20 @@ from pbutils.request.logs import log
 
 def expand_profiles(profiles, environ=None):
     ''' generator to yield all request profiles '''
+    raise NotImplementedError
     for profile in profiles:
         if not isinstance(profile, dict):
             raise TypeError(F"profile is not a dict ({type(profile)})")
         for context in get_contexts(profile):
-            if isinstance(environ, dict):
-                context.update(environ)
-            yield create_request_params(profile, context)
+            context.update(environ)
+            yield context
+
+def all_contexts(profile, environ=None):
+    if environ is None:
+        environ = {}            # no mutable default args
+    for context in get_contexts(profile):
+        context.update(environ)
+        yield context
 
 
 def get_contexts(profile):
@@ -75,15 +82,13 @@ def populate_profile(profile, context):
     return pprofile
 
 
-def create_request_params(profile, context):
+def create_request_params(profile):
     '''
     Build and return a parameter dict based on the profile,
     which can then be used to call request().
     '''
     # need to figure out good way of being able to expand (almost)
     # any entry in the profile (method, auth, timeout....)
-
-    profile = populate_profile(profile, context)
 
     url = profile['url']
     method = profile['method'].upper()
@@ -101,6 +106,7 @@ def create_request_params(profile, context):
                 mimetype = headers['Content-type'] = 'application/json'
         if mimetype == 'application/json':
             body = json.dumps(body)
+            log.debug("converting body to json")
     else:
         body = None
 
@@ -163,10 +169,23 @@ def make_auth_header(auth_info):
 
 
 def get_body(profile, mimetype):
+    '''
+    Get the body, either directly from the profile or read from disk
+    if profile['body'] is a str and starts with '@'.
+
+    Also, attempt to convert body to data if mimetype=='application/json'.
+    '''
     body = profile['body']
-    if isinstance(body, str) and body.startswith('@'):
-        with open(body[1:]) as fyle:
-            body = fyle.read()
+    if isinstance(body, str):
+        if body.startswith('@'):
+            with open(body[1:]) as fyle:
+                body = fyle.read()
+
+        if mimetype.lower() == 'application/json':
+            try:
+                body = json.loads(body)
+            except Exception as e:
+                log.debug(F"Could not convert body to json, leaving as {type(body)} ({type(e)}: {e})")
 
     return body
 
