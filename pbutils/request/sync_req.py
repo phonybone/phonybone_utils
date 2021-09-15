@@ -11,11 +11,6 @@ def run(profiles: List[dict], environ=None):
             yield do_request(req_params, session)
 
 
-def do_request(req_params, session): 
-    ''' Issue request synchronously; capture output if requested '''
-    response = session.request(**req_params)
-    try:
-        content = response.json()
-    except Exception:
-        content = response.text
-    return content
+def do_request(req_params, session):
+    ''' Issue request synchronously; return json or content '''
+    return session.request(**req_params)
