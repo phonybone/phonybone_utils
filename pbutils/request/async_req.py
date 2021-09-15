@@ -25,7 +25,7 @@ async def arun(profiles):
 
 
 def request_task(req_params, session):
-    ''' create an asyncio.task from the profile '''            
+    ''' create an asyncio.task from the profile '''
     async def do_arequest(req_params, session):
         output_path = req_params.pop('output_path', None)
 
@@ -48,7 +48,6 @@ def request_task(req_params, session):
 
 
 def global_exception_handler(loop, signal=None):
-    log.warning("global_exception_handler entered")    
+    log.warning("global_exception_handler entered")
     if signal:
         log.info(F"Received signal {signal}")
-
