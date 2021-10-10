@@ -4,6 +4,7 @@ Common functions for [a]sync requests and arequest
 import sys
 import itertools as it
 import importlib
+import requests
 from copy import deepcopy
 from pathlib import Path
 import json
@@ -22,6 +23,7 @@ def expand_profiles(profiles, environ=None):
         for context in get_contexts(profile):
             context.update(environ)
             yield context
+
 
 def all_contexts(profile, environ=None):
     if environ is None:
@@ -130,7 +132,7 @@ def create_request_params(profile):
 
     if 'debug' in profile:
         log.debug(F"request:\n{json4(req_params)}")
-    log.debug(as_curl(req_params))
+    # log.debug(as_curl(req_params))
     return req_params
 
 
@@ -163,6 +165,9 @@ def make_auth_header(auth_info):
 
     elif "header_json" in auth_info:  # literal dict
         return auth_info["header_json"]
+
+    elif "request" in auth_info:
+        return make_auth_request(auth_info)
 
     else:
         raise RuntimeError("don't know how to make auth header")
@@ -202,3 +207,46 @@ def as_curl(req_params):
 
     # --data goes here
     return " \\\n".join(cmd)    # one part of cmd[] per line, with trailing '\'s
+
+
+def make_auth_request(auth_info):
+    req_params = auth_info['request']
+
+    # check for previously cached result
+    if 'cache_path' in auth_info:
+        try:
+            with open(auth_info['cache_path']) as cache:
+                log.debug(F"using cached token in {auth_info['cache_path']}")
+                token = json.load(cache)
+                return {"Authorization": "Bearer " + token['access_token']}
+        except FileNotFoundError:
+            pass
+
+    # get request info from file?
+    if isinstance(req_params, str) and req_params.startswith('@'):
+        log.debug(F"getting auth request info from {req_params[1:]}")
+        with open(req_params[1:]) as fyle:
+            req_params = json.load(fyle)
+
+    req_params.pop('method', None)
+    resp = requests.post(**req_params)
+    token = resp.json()
+
+    if 'cache_path' in auth_info:
+        with open(auth_info['cache_path'], 'w') as cache:
+            print(json4(token), file=cache)
+            log.debug(F"cached token info to {auth_info['cache_path']}")
+
+    return {"Authorization": "Bearer " + token['access_token']}
+
+if __name__ == '__main__':
+    # Generate ONROUTE token with email & account, store json to file
+    email = sys.argv[1]
+    account_code = sys.argv[2]
+    header = make_onroute_auth_header({'email': email, 'account': account_code})
+
+    fn = F"{account_code}.{email}.auth_header.json"
+    with open(fn, "w") as f:
+        print(json.dumps(header, indent=4), file=f)
+        print(F"{fn} written")
+    

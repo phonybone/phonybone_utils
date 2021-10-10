@@ -1,7 +1,7 @@
 from typing import List
 import json
 import requests
-from pbutils.request.utils import create_request_params, all_contexts, populate_profile
+from pbutils.request.utils import create_request_params, all_contexts, populate_profile, make_auth_request
 
 
 def run_sync(profiles: List[dict]):

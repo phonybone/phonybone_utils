@@ -4,22 +4,29 @@ import asyncio
 import aiohttp
 from aiofile import async_open
 
-from pbutils.request.utils import expand_profiles
+from pbutils.request.utils import expand_profiles, all_contexts, populate_profile, create_request_params
 from pbutils.request.logs import log
 
 json4 = partial(json.dumps, indent=4)
 
 
-async def arun(profiles):
+async def arun(profiles, environ=None):
     ''' create a task for each expanded profile '''
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(global_exception_handler)
 
     async with aiohttp.ClientSession() as session:
-        tasks = [request_task(req_params, session) for req_params in expand_profiles(profiles)]
-        for task in asyncio.as_completed(tasks):
+        tasks = []
+        for profile in profiles:
+            for context in all_contexts(profile, environ):
+                profile = populate_profile(profile, environ)
+                req_params = create_request_params(profile)
+                task = request_task(req_params, session)
+                tasks.append(task)
+
+        for task_result in asyncio.as_completed(tasks):
             try:
-                _ = await task
+                _ = await task_result
             except Exception as e:
                 print(F"caught {type(e)}: {e}")
 
