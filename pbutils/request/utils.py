@@ -58,14 +58,22 @@ def make_var_iterator(varname, varinfo):
     if is_scalar(varinfo):
         return [varinfo]
 
-    if 'range' in varinfo:
-        rangeinfo = varinfo['range']
-        start = rangeinfo.get('start', 0)
-        stop = rangeinfo['stop']
-        step = rangeinfo.get('step', 1)
-        return range(start, stop, step)
+    if isinstance(varinfo, list):  # list literal
+        return varinfo
 
-    if 'list' in varinfo:
+    if 'range' in varinfo:      # generate using range()
+        rangeinfo = varinfo['range']
+        if isinstance(rangeinfo, dict):  # named range() params
+            start = rangeinfo.get('start', 0)
+            stop = rangeinfo['stop']
+            step = rangeinfo.get('step', 1)
+            return range(start, stop, step)
+        elif isinstance(rangeinfo, list):  # implied range() params
+            return range(*rangeinfo)
+        else:
+            raise RuntimeError("Don't know how to make an iterator from '{rangeinfo}'")
+
+    if 'list' in varinfo:            # named list literal; basically same as above
         return iter(varinfo['list'])  # could be any iterable, really
 
     raise RuntimeError(F"Don't know how to evaluate path_var {varname}")
@@ -108,7 +116,6 @@ def create_request_params(profile):
                 mimetype = headers['Content-type'] = 'application/json'
         if mimetype == 'application/json':
             body = json.dumps(body)
-            log.debug("converting body to json")
     else:
         body = None
 
@@ -213,14 +220,14 @@ def make_auth_request(auth_info):
     req_params = auth_info['request']
 
     # check for previously cached result
-    if 'cache_path' in auth_info:
+    if 'cache_path' in auth_info and auth_info.get('override_cache', False):
         try:
             with open(auth_info['cache_path']) as cache:
                 log.debug(F"using cached token in {auth_info['cache_path']}")
                 token = json.load(cache)
                 return {"Authorization": "Bearer " + token['access_token']}
-        except FileNotFoundError:
-            pass
+        except FileNotFoundError as e:
+            log.debug(F"{e}, attempting to authorize")
 
     # get request info from file?
     if isinstance(req_params, str) and req_params.startswith('@'):
@@ -230,7 +237,11 @@ def make_auth_request(auth_info):
 
     req_params.pop('method', None)
     resp = requests.post(**req_params)
+    resp.raise_for_status()
     token = resp.json()
+    if 'access_token' not in token:
+        log.warning(F"error in auth request: {json.dumps(token, indent=4)}")
+        raise RuntimeError("authorization failed")
 
     if 'cache_path' in auth_info:
         with open(auth_info['cache_path'], 'w') as cache:
