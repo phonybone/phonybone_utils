@@ -1,7 +1,8 @@
 from typing import List
 import json
 import requests
-from pbutils.request.utils import create_request_params, all_contexts, populate_profile, make_auth_request
+from pbutils.request.utils import create_request_params, all_contexts, populate_profile
+from pbutils.request.logs import log
 
 
 def run_sync(profiles: List[dict]):
@@ -13,6 +14,7 @@ def run_sync(profiles: List[dict]):
             content = response.text
 
         if 200 <= response.status_code <= 299:
+            log.debug(F"{response.request.url}: {response.status_code}")
             output = content
         else:
             output = F"{response.request.url}: {response.status_code}\n{content}"
@@ -32,16 +34,17 @@ def run_profiles(profiles: List[dict], environ=None):
 
     Yield each response.
     '''
-    if isinstance(profiles, dict):
+    if isinstance(profiles, dict):  # listify
         profiles = [profiles]
+
     with requests.Session() as session:
         for profile in profiles:
             for context in all_contexts(profile, environ):
-                profile = populate_profile(profile, context)
-                req_params = create_request_params(profile)
+                pprofile = populate_profile(profile, context)
+                req_params = create_request_params(pprofile)
                 response = session.request(**req_params)
 
-                output_path = profile.pop('output_path', None)
+                output_path = pprofile.pop('output_path', None)
                 if output_path:
                     response.output_path = output_path
 

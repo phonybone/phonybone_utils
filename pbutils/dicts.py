@@ -130,7 +130,7 @@ def create_path_value(data, path, value):
 
 
 def is_scalar(thing):
-    return isinstance(thing, (str, bytes, int, float, bool)) or thing is None
+    return thing is None or isinstance(thing, (str, bytes, int, float, bool))
 
 
 if __name__ == '__main__':
