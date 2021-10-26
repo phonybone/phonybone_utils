@@ -220,10 +220,10 @@ def make_auth_request(auth_info):
     req_params = auth_info['request']
 
     # check for previously cached result
-    if 'cache_path' in auth_info and auth_info.get('override_cache', False):
+    if 'cache_path' in auth_info or auth_info.get('override_cache', False):
         try:
             with open(auth_info['cache_path']) as cache:
-                log.debug(F"using cached token in {auth_info['cache_path']}")
+                log.debug(F"returning cached token in {auth_info['cache_path']}")
                 token = json.load(cache)
                 return {"Authorization": "Bearer " + token['access_token']}
         except FileNotFoundError as e:
@@ -240,7 +240,7 @@ def make_auth_request(auth_info):
     resp.raise_for_status()
     token = resp.json()
     if 'access_token' not in token:
-        log.warning(F"error in auth request: {json.dumps(token, indent=4)}")
+        log.warning(F"error in auth request: {json4(token)}")
         raise RuntimeError("authorization failed")
 
     if 'cache_path' in auth_info:
@@ -249,15 +249,3 @@ def make_auth_request(auth_info):
             log.debug(F"cached token info to {auth_info['cache_path']}")
 
     return {"Authorization": "Bearer " + token['access_token']}
-
-if __name__ == '__main__':
-    # Generate ONROUTE token with email & account, store json to file
-    email = sys.argv[1]
-    account_code = sys.argv[2]
-    header = make_onroute_auth_header({'email': email, 'account': account_code})
-
-    fn = F"{account_code}.{email}.auth_header.json"
-    with open(fn, "w") as f:
-        print(json.dumps(header, indent=4), file=f)
-        print(F"{fn} written")
-    
