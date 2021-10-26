@@ -6,18 +6,22 @@ json4 = partial(json.dumps, indent=4)
 
 
 def keystr(d, connector=', '):
+    ''' return a string containing all keys of dict joined by 'connector' '''
     return connector.join(d.keys())
 
 
 def hashslice(d, *keys):
+    ''' return a list of dict values for the given keys '''
     return [d[k] for k in keys]
 
 
 def hashtuple(d, *keys):
+    ''' return a tuple of dict values for the given keys '''
     return tuple(hashslice(d, *keys))
 
 
 def hashsubset(d, *keys):
+    ''' return a subset of a dict for the given keys '''
     return {k: d[k] for k in keys}
 
 
@@ -28,12 +32,15 @@ def to_dict(config, section):
 
 
 def json_copy(d):
-    ''' make a copy of raw data by converting to json and back (faster than copy.deepcopy for simple data) '''
+    '''
+    Make a copy of raw data by converting to json and back
+    (faster than copy.deepcopy for simple data).
+    '''
     return json.loads(json.dumps(d))
 
 
 def from_attrs(obj, keys=None, include_nones=False):
-    ''' return a dictionary based on an object's attributes '''
+    ''' return a dictionary based on an object's attributes (kinda like var() '''
     if keys is None:
         keys = obj.__dict__.keys()
     return hashsubset(obj.__dict__, *keys)
@@ -61,7 +68,26 @@ def simple_diff(d1, d2):
 
 
 def json_to_object(data_str: str) -> SimpleNamespace:
-    ''' return a nested object based on a json string; can throw on bad data. '''
+    '''
+    Return a nested object based on a json string.
+
+    For instance, on input
+    {
+        "k1": {
+            "k1_1": "v1",
+            "k1_2": ["k1_2.1", "k1_2.2"],
+            "k1_3": 3.14159
+        }
+    }
+
+    the function should rturn a SimpleNamspace object like:
+    o.k1.k1_1 = "v1"
+    o.k1.k1_2 = ["k1_2.1", "k1_2.2"]
+    o.k1.k1_3 = 3.14159
+
+    Can throw on bad data.  Note in particular that key names can only contain
+    characters allowable for attributes.
+    '''
     return json.loads(data_str, object_hook=lambda obj: SimpleNamespace(**obj))
 
 
@@ -130,11 +156,16 @@ def create_path_value(data, path, value):
 
 
 def is_scalar(thing):
+    '''
+    Return true if thing is of one-dimensional type:
+    IE, None, str, bytes, int, float, or bool.
+    '''
     return thing is None or isinstance(thing, (str, bytes, int, float, bool))
 
 
 if __name__ == '__main__':
     import sys
+    from streams import die
 
     def test_remove_nones():
         d = dict(this='that', these='those', n=None)
@@ -164,13 +195,16 @@ if __name__ == '__main__':
       "name": "mary",
       "birthday": "May 1, 2001"
     }
-  ]
+  ],
+  "uh-oh": "this should not explode",
+  "uh.oh": "this doesn't either"
 }
 '''
         obj = json_to_object(data_str)
         assert obj.this == 'that'
         assert obj.bike_colors.honda == 'red'
         assert obj.somelist[2].name == 'mary'
+        assert getattr(obj, "uh.oh") == "this doesn't either"
         print('yay')
 
     def test_create_path_value():
@@ -181,10 +215,17 @@ if __name__ == '__main__':
         create_path_value(data, ['those'], 'these')
         create_path_value(data, ['list'], [None])  # this is pretty hacky, but...
         create_path_value(data, ['list', 0], 'fart')
-        
+
         print(json.dumps(data, indent=4))
 
+    ########################################################################
+    cmds = [key for key, value in locals().items() if key.startswith('test_') and callable(value)]
+    usage = F"usage: python dicts.py [{'|'.join(cmds)}]"
+    if len(sys.argv) <= 1:
+        die(usage)
     cmd = sys.argv[1]
     args = sys.argv[2:]
-    method = locals()[cmd]
+    method = locals().get(cmd)
+    if method is None:
+        die(usage)
     method(*args)
