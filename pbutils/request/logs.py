@@ -1,5 +1,5 @@
 import logging
 
 logging.basicConfig()
-log = logging.getLogger(__name__)
+log = logging.getLogger('arequest')
 log.setLevel(logging.INFO)
