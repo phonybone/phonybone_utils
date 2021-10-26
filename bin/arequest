@@ -23,7 +23,7 @@ import asyncio
 from pbutils.argparsers import parser_stub, wrap_main
 from pbutils.request.logs import log
 from pbutils.streams import die
-from pbutils.request.sync_req import run_sync
+from pbutils.request.sync_req import run_sync, handle_response
 from pbutils.request.async_req import arun
 
 
@@ -33,7 +33,8 @@ def main(config):
         die("Sorry, you need python 3.7 or better to run this script")
 
     arun_kwargs = {}
-    if 'DEBUG' in os.environ:
+    if 'DEBUG' in os.environ or config.d:
+        print("setting log level to DEBUG")
         log.setLevel(logging.DEBUG)
         arun_kwargs['debug'] = True
 
@@ -41,7 +42,8 @@ def main(config):
     if config.do_async:
         asyncio.run(arun(profiles), **arun_kwargs)
     else:
-        run_sync(profiles)
+        for profile, response in run_sync(profiles):
+            handle_response(profile, response, config)
 
 def get_profiles(profile_fn):
     ''' read and return list of profiles from file '''
@@ -57,6 +59,7 @@ def get_profiles(profile_fn):
 def make_parser():
     parser = parser_stub(__doc__)
     parser.add_argument('--do-async', help='run in asyncio mode', action='store_true')
+    # parser.add_argument('-v', '--verbose')
     parser.add_argument('arg', nargs='*')
     return parser
 
