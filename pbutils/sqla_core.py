@@ -53,14 +53,8 @@ def do_stream(connection, stream):
 
     Also not guaranteed to be correct; just splits on lines ending in ';'.
     '''
-    trans = connection.begin()
-    try:
-        for stmt in records(stream, ";\n"):
-            connection.execute(sa.text(stmt).execution_options(autocommit=False))
-    except sa.exc.OperationalError:
-        trans.rollback()
-    else:
-        trans.commit()
+    for stmt in records(stream, ";\n"):
+        connection.execute(sa.text(stmt).execution_options(autocommit=False))
 
 
 def get_primary_keys(table):
