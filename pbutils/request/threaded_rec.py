@@ -22,7 +22,6 @@ class ThreadedReq:
                 pprofile = populate_profile(profile, context)
                 req_params = create_request_params(pprofile)
                 self.inq.put((profile, req_params))
-                print(F"put {profile['url']} onto inq")
 
         threads = []
         for _ in range(self.n_threads):
@@ -31,31 +30,21 @@ class ThreadedReq:
             threads.append(thread)
 
         for thread in threads:
-            print(F"waiting on {thread.name}.join")
             thread.join()
-            print(F"{thread.name} joined")
 
     def do_requests(self):
-        print(F"do_requests starting")
-        # while not self.inq.empty:
         while True:
-            print(F"fetching from inq")
             try:
                 profile, req_params = self.inq.get(block=False)
             except Q.Empty:
                 break
-            print(F"fetching {req_params['url']}")
             resp = requests.request(**req_params)
-            print(F"putting (profile, resp) onto self.outq")
             self.outq.put((profile, resp))
-        print(F"do_requets done, bye")
 
     def do_responses(self):
         while True:
             try:
                 profile, resp = self.outq.get(timeout=3)
-                print(F"do_responses yielding")
                 yield profile, resp
             except Q.Empty:
-                print(F"do_responses done")
                 return

@@ -43,7 +43,6 @@ def main(config):
         runner = ThreadedReq(config.n_threads, config, {})
         runner.run(profiles)
         for profile, response in runner.do_responses():
-            print(F"main: get profile, resp")
             handle_response(profile, response, config)
     elif config.do_async:
         asyncio.run(arun(profiles), **arun_kwargs)
