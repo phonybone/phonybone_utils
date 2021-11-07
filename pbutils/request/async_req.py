@@ -4,7 +4,7 @@ import asyncio
 import aiohttp
 from aiofile import async_open
 
-from pbutils.request.utils import expand_profiles, all_contexts, populate_profile, create_request_params
+from pbutils.request.utils import all_contexts, populate_profile, create_request_params
 from pbutils.request.logs import log
 
 json4 = partial(json.dumps, indent=4)
