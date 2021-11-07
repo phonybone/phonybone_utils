@@ -14,17 +14,19 @@ def parser_stub(docstr):
     parser = argparse.ArgumentParser(description=docstr, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--config', default=_get_default_config_fn())
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose')
-    parser.add_argument('-d', action='store_true', help='debugging flag')
+    parser.add_argument('-q', '--silent', action='store_true', help='silent mode')
+    parser.add_argument('-d', '--debug', action='store_true', help='debugging flag')
 
     # leave comments here as templates
     # parser.add_argument('required_arg')
-    # parser.add_argument('--', default='', help='')
+    # parser.add_argument('--something', default='', help='')
     # parser.add_argument('args', nargs=argparse.REMAINDER)
 
     return parser
 
 
 def _get_default_config_fn():
+    # warning: pyenv breaks this with its shims
     fn = sys.argv[0].replace('.py', '.ini')
     if not fn.endswith('.ini'):
         fn += '.ini'
@@ -48,7 +50,7 @@ def _assemble_config(opts, default_section_name='default'):
                 raise
             else:
                 config = get_config_from_data(f'[{default_section_name}]')
-                if opts.d:
+                if opts.debug:
                     warn(f'skipping non-existent config file {opts.config}')
 
     inject_opts(config, opts)
@@ -78,9 +80,12 @@ def wrap_main(main, parser, args=sys.argv[1:]):
     opts = parser.parse_args(args)
     config = _assemble_config(opts)
 
-    if opts.d:
+    if opts.debug:
         os.environ['DEBUG'] = 'True'
         warn(opts)
+
+    if opts.silent and opts.verbose:
+        warn('WARNING: both --silent and --verbose are set.  Your output may be weird')
 
     try:
         rc = main(config) or 0
@@ -164,13 +169,15 @@ if __name__ == '__main__':
 
         if opts_ini:
             opts_config = get_config(opts_ini)
-        parser.add_argument('-v', action='store_true', help='verbose')
+        parser.add_argument('-v', action='store_true', help='verbose mode')
+        parser.add_argument('-q', action='store_true', help='silent mode')
         parser.add_argument('-d', action='store_true', help='debugging flag')
 
         opts = parser.parse_args()
-        if opts.d:
+        if opts.debug:
             os.environ['DEBUG'] = 'True'
             print(ppjson(vars(opts)))
+
         return opts
 
     # -----------------------------------------------------------------------
