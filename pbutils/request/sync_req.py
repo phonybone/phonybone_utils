@@ -26,11 +26,6 @@ def run_profiles(profiles: List[dict], environ=None):
                 pprofile = populate_profile(profile, context)
                 req_params = create_request_params(pprofile)
                 response = session.request(**req_params)
-
-                # output_path = pprofile.pop('output_path', None)
-                # if output_path:
-                #     response.output_path = output_path
-
                 yield profile, response
 
 
@@ -41,15 +36,16 @@ def handle_response(profile, response, config):
     except Exception:
         content = response.text
 
-    if not response.ok:
-        log.debug(F"{response.request.url}: {response.status_code}")
-        output = content
-    else:
-        output = F"{response.request.url}: {response.status_code}\n{content}"
+    summary = F"{response.request.url}: {response.status_code}"
 
     if 'output_path' in profile:
         with open(profile['output_path'], 'w') as output_stream:
-            print(output, file=output_stream)
-            log.debug(F"{response.output_path} written")
+            output_stream.write(content)
+            log.debug(F"{profile['output_path']} written")
+            print(F"{profile['output_path']} written")
     elif config.verbose:
-        print(output)
+        print(summary)
+        print(content)
+    elif not config.silent:
+        print(summary)
+
