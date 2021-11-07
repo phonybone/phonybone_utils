@@ -107,3 +107,4 @@ pbutils/request/profiles
 pbutils/request/data
 pbutils/request/responses
 pbutils/Fred.ini
+pbutils/tests/requests
