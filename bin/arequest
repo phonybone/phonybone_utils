@@ -11,8 +11,8 @@ vmc.swdev@gmail.com
 # todo:
 # better handling of exceptions in async
 # handle response from arun
-# re-implement output_path (return profile from run? ugh)
-
+# re-factor sync, async, and threaded models with common interface
+# Implement environments
 
 import sys
 import os
@@ -25,6 +25,7 @@ from pbutils.request.logs import log
 from pbutils.streams import die
 from pbutils.request.sync_req import run_sync, handle_response
 from pbutils.request.async_req import arun
+from pbutils.request.threaded_rec import ThreadedReq
 
 
 def main(config):
@@ -33,12 +34,18 @@ def main(config):
         die("Sorry, you need python 3.7 or better to run this script")
 
     arun_kwargs = {}
-    if 'DEBUG' in os.environ or config.d:
+    if 'DEBUG' in os.environ or config.debug:
         log.setLevel(logging.DEBUG)
         arun_kwargs['debug'] = True
 
     profiles = get_profiles(config.arg[0])
-    if config.do_async:
+    if config.n_threads:
+        runner = ThreadedReq(config.n_threads, config, {})
+        runner.run(profiles)
+        for profile, response in runner.do_responses():
+            print(F"main: get profile, resp")
+            handle_response(profile, response, config)
+    elif config.do_async:
         asyncio.run(arun(profiles), **arun_kwargs)
     else:
         for profile, response in run_sync(profiles):
@@ -58,6 +65,7 @@ def get_profiles(profile_fn):
 def make_parser():
     parser = parser_stub(__doc__)
     parser.add_argument('--do-async', help='run in asyncio mode', action='store_true')
+    parser.add_argument('--n-threads', type=int, help='run with N threads')
     parser.add_argument('arg', nargs='*')
     return parser
 
