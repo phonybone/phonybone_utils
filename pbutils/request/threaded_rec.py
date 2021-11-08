@@ -12,7 +12,7 @@ class ThreadedReq:
     '''
     Threaded requests.
     '''
-    def __init__(self, n_threads, config, environ):
+    def __init__(self, n_threads, config, environ, error_handler=None):
         ''' constructor '''
         self.n_threads = n_threads
         self.config = config
@@ -20,6 +20,7 @@ class ThreadedReq:
         self.inq = Q.Queue()
         self.outq = Q.Queue()
         self.done = th.Event()
+        self.error_handler = error_handler
 
     def run(self, profiles):
         '''
@@ -51,8 +52,17 @@ class ThreadedReq:
                 profile, req_params = self.inq.get(block=False)
             except Q.Empty:
                 break
-            resp = requests.request(**req_params)
-            self.outq.put((profile, resp))
+            try:
+                # resp = None
+                resp = requests.request(**req_params)
+                resp.raise_for_status()
+            except Exception as e:
+                if self.error_handler:
+                    self.error_handler(profile, resp, e)
+                else:
+                    raise
+            else:
+                self.outq.put((profile, resp))
 
     def do_responses(self):
         '''
