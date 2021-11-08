@@ -21,12 +21,12 @@ import logging
 import asyncio
 
 from pbutils.argparsers import parser_stub, wrap_main
-from pbutils.request.logs import log
 from pbutils.streams import die
 from pbutils.request.sync_req import run_sync, handle_response
 from pbutils.request.async_req import arun
 from pbutils.request.threaded_rec import ThreadedReq
-
+from pbutils.request.utils import default_error_handler
+from pbutils.request.logs import log
 
 def main(config):
     ''' main entry point '''
@@ -40,7 +40,8 @@ def main(config):
 
     profiles = get_profiles(config.arg[0])
     if config.n_threads:
-        runner = ThreadedReq(config.n_threads, config, {})
+        runner = ThreadedReq(config.n_threads, config, {},
+                             error_handler=default_error_handler)
         runner.run(profiles)
         for profile, response in runner.do_responses():
             handle_response(profile, response, config)
