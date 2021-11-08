@@ -13,7 +13,6 @@ from urllib.parse import urlencode
 from pbutils.dicts import is_scalar, traverse_json, set_path_value, json4
 from pbutils.request.logs import log
 
-
 def expand_profiles(profiles, environ=None):
     ''' generator to yield all request profiles '''
     raise NotImplementedError
@@ -249,3 +248,8 @@ def make_auth_request(auth_info):
             log.debug(F"cached token info to {auth_info['cache_path']}")
 
     return {"Authorization": "Bearer " + token['access_token']}
+
+def default_error_handler(profile, response, exc):
+    url = response.request.url if response else profile['url']
+    status_code = response.status_code if response else '<unknown>'
+    print(F"{url}: {status_code}: caught {type(exc)}: {exc}", file=sys.stderr)
