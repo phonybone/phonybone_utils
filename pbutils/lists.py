@@ -1,4 +1,6 @@
 ''' Helper functions for lists '''
+
+
 def grow(l, n, f):
     ''' extend a list by n elements; each element created by function f (no params) '''
     filler = [f() for _ in range(n)]
@@ -33,6 +35,23 @@ def first_match(itr, match=lambda x: True, default=None):
     or default if no match.
     '''
     return next((x for x in itr if match(x)), default)
+
+
+def scale_list(L, max_L):
+    ''' return a new list based on L by removing intermittent points '''
+    N = len(L)
+    n_remove = N - max_L
+    i = max_L // 2
+    new_L = list()
+    # ratio = n_remove / N
+
+    for idx in range(N):
+        i += n_remove
+        if i > N:
+            i -= N
+        else:
+            new_L.append(L[idx])
+    return new_L
 
 
 if __name__ == '__main__':
