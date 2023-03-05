@@ -113,13 +113,13 @@ def do_pipe(cmds):
 
 
 def gather_input(prompts):
-    ''' Loop over prompts using raw_input; fill in the fields '''
+    ''' Loop over prompts using input; fill in the fields '''
     _rx = re.compile(' ')
 
     def _get_value(key, info):
         prompt = info.get('prompt', 'Enter {}'.format(key))
         while True:
-            value = raw_input('{}: '.format(prompt))
+            value = input('{}: '.format(prompt))
             if 'validate' in info:
                 validate = info['validate']
                 if isinstance(validate, list):
@@ -172,7 +172,10 @@ if __name__ == '__main__':
         prompts['color'] = {'validate': qw('red blue yellow'), 'validation_help': 'Must be one of red, blue, or yellow'}
         try:
             gather_input(prompts)
-            for key, info in iteritems(prompts):
+            for key, info in prompts.items():
                 print('{}: {}'.format(key, info['value']))
         except EOFError:
             print('never mind')
+        return 
+
+    # test_gather_input()
