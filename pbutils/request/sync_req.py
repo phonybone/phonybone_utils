@@ -26,10 +26,18 @@ def run_profiles(profiles: List[dict], environ=None):
                 pprofile = populate_profile(profile, context)
                 req_params = create_request_params(pprofile)
                 response = session.request(**req_params)
-                yield profile, response
+                yield pprofile, response
 
 
 def handle_response(profile, response, config):
+    '''
+    Output the response.
+
+    Prints the url and status code of response.
+    If -v or --verbose was given on cli, also prints the body of the response.
+    If -q or --quiet, then prints nothing.
+    If 'output_path' is present in the request profile, then prints to disk at that path.
+    '''
     try:
         content = response.json()
         content = json.dumps(content, indent=4)
