@@ -172,3 +172,6 @@ if __name__ == '__main__':
         print(qw(fodder, re.compile(r's')))
         print(qw(fodder, 's'))
 #    test_qw()
+
+
+
