@@ -16,7 +16,13 @@ vmc.swdev@gmail.com
 
 import sys
 import os
+import re
 import json
+try:
+    import demjson
+    HAS_DEMJSON = True
+except ImportError:
+    HAS_DEMJSON = False
 import logging
 import asyncio
 
@@ -26,35 +32,77 @@ from pbutils.request.sync_req import run_sync, handle_response
 from pbutils.request.async_req import arun
 from pbutils.request.threaded_rec import ThreadedReq
 from pbutils.request.utils import default_error_handler
+from pbutils.request.postman import is_postman, postman2areq
 from pbutils.request.logs import log
+
+USAGE = f"usage: {os.path.basename(sys.argv[0])} <profiles.json> [--do-async|n-threads] [--postman-env=<env.json>] [--name=<name>]"
+
 
 def main(config):
     ''' main entry point '''
-    if sys.version_info < (3,7):
-        die("Sorry, you need python 3.7 or better to run this script")
-
     arun_kwargs = {}
     if 'DEBUG' in os.environ or config.debug:
         log.setLevel(logging.DEBUG)
         arun_kwargs['debug'] = True
 
-    profiles = get_profiles(config.arg[0])
+    # load profiles
+    try:
+        profiles = get_profiles(profile_fn=config.arg[0])
+    except IndexError:
+        die(USAGE)
+
+    # load environment if provided
+    if hasattr(config, 'env'):
+        with open(config.env) as env:
+            envmt = json.load(env)
+        for profile in profiles:
+            profile.setdefault('vars', {}).update(envmt)
+
+    # handle postman-style profiles/environments
+    if is_postman(profiles):
+        profiles = postman2areq(profiles, config.postman_env)
+
+    # add debug flag if requested
+    if 'DEBUG' in os.environ or config.debug:
+        for prof in profiles:
+            prof['debug'] = True
+
+    # filter on profile[name]:
+    if config.names:
+        new_profs = []
+        for name in config.names:
+            regex = re.compile(name)
+            new_profs += [prof for prof in profiles if regex.search(prof.get('name', ''))]
+        profiles = new_profs
+
     if config.n_threads:
         runner = ThreadedReq(config.n_threads, config, {},
                              error_handler=default_error_handler)
         runner.run(profiles)
         for profile, response in runner.do_responses():
             handle_response(profile, response, config)
+
     elif config.do_async:
         asyncio.run(arun(profiles), **arun_kwargs)
+
     else:
         for profile, response in run_sync(profiles):
             handle_response(profile, response, config)
 
+
 def get_profiles(profile_fn):
     ''' read and return list of profiles from file '''
     with open(profile_fn) as prf:
-        profiles = json.load(prf)
+        try:
+            if HAS_DEMJSON:
+                profiles = demjson.decode(prf.read())
+            else:
+                profiles = json.load(prf)
+        except Exception as e:
+            print(F"unable to decode json file: {profile_fn}")
+            print(F"caught {type(e)}: {e}", file=sys.stderr)
+            sys.exit(1)
+
     if isinstance(profiles, dict):
         profiles = [profiles]   # convert a single profile to a list length=1
     if not isinstance(profiles, list):
@@ -66,9 +114,15 @@ def make_parser():
     parser = parser_stub(__doc__)
     parser.add_argument('--do-async', help='run in asyncio mode', action='store_true')
     parser.add_argument('--n-threads', type=int, help='run with N threads')
+    parser.add_argument('--env', help='environment file (.json)')
+    parser.add_argument('--postman-env')
+    parser.add_argument('--name', dest="names", action='append', help='only process requests that match name (regex)')
     parser.add_argument('arg', nargs='*')
     return parser
 
 
 if __name__ == '__main__':
+    if sys.version_info < (3,7):
+        die("Sorry, you need python 3.7 or better to run this script")
+
     wrap_main(main, make_parser())
