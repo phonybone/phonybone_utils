@@ -45,21 +45,33 @@ def arrayNd(*dims):
     return [arrayNd(*dims[1:]) for _ in range(dims[0])]
 
 
+def windows(arr, window_size=3):
+    if len(arr) < window_size:
+        raise ValueError(F"Array too short for window size ({len(arr)}<{window_size})")
+
+    for i in range(len(arr)-window_size+1):
+        j = i + window_size
+        yield arr[i:j]
+
+
 ########################################################################
 
 
 if __name__ == '__main__':
-    gc = groupCount(range(100), lambda x: x % 5)
-    print(gc)
+    # gc = groupCount(range(100), lambda x: x % 5)
+    # print(gc)
 
-    gc = groupCount('this is a string with some duplicates in the string is a string some some this'.split(' '))
-    print(gc)
+    # gc = groupCount('this is a string with some duplicates in the string is a string some some this'.split(' '))
+    # print(gc)
 
-    gc = groupBy(range(100), lambda x: x % 5)
-    print(gc)
+    # gc = groupBy(range(100), lambda x: x % 5)
+    # print(gc)
 
-    gc = groupBy('this is a string with some duplicates in the string is a string some some this'.split(' '),
-                 lambda s: len(s)
-    )
-    print(gc)
+    # gc = groupBy('this is a string with some duplicates in the string is a string some some this'.split(' '),
+    #              lambda s: len(s)
+    # )
+    # print(gc)
+
+    for win in windows('abcdefg', 4):
+        print(F"win={win}")
     print('yay')

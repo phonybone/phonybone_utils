@@ -2,6 +2,7 @@
 Common functions for [a]sync requests and arequest
 '''
 import sys
+import os
 import itertools as it
 import importlib
 import requests
@@ -12,6 +13,7 @@ from urllib.parse import urlencode
 
 from pbutils.dicts import is_scalar, traverse_json, set_path_value, json4
 from pbutils.request.logs import log
+
 
 def expand_profiles(profiles, environ=None):
     ''' generator to yield all request profiles '''
@@ -53,7 +55,15 @@ def get_contexts(profile):
 
 
 def make_var_iterator(varname, varinfo):
-    ''' create an iterator for the variable "varname" with the info in varinfo '''
+    '''
+    Create an iterator for the variable "varname" with the info in varinfo.
+
+    If varinfo is a scalar, create a one-element list with the value.
+    If varinfo is a list (literal), return that.
+    Otherwise, varinfo should be a dict of a particular "flavor":
+    - varinfo['range'] -> return range(start, stop, step) (with defaults)
+    - 
+    '''
     if is_scalar(varinfo):
         return [varinfo]
 
@@ -86,8 +96,11 @@ def populate_profile(profile, context):
     pprofile = deepcopy(profile)
     for path, value in traverse_json(profile, only_leaves=True):
         if isinstance(value, str) and '{' in value:
-            value = value.format(**context)
-            set_path_value(pprofile, path, value)
+            try:
+                value = value.format(**context)
+                set_path_value(pprofile, path, value)
+            except Exception as e:
+                print(F"populate: caught {type(e)}: {e}")
     return pprofile
 
 
@@ -101,20 +114,22 @@ def create_request_params(profile):
 
     url = profile['url']
     method = profile['method'].upper()
+    log.debug(F"url: {method} {url}")
     headers = profile.get('headers', {})
     params = profile.get('params')  # querystring params
     timeout = float(profile.get('timeout', '1000.0'))
-    log.debug(F"url: {method} {url}")
+
     if 'body' in profile:
         mimetype = headers.get('Content-type') or headers.get('content-type') or headers.get('Content-type')
         body = get_body(profile, mimetype)
-        if mimetype is None:
-            if isinstance(body, str):
-                mimetype = headers['Content-type'] = 'text/plain'
-            else:
-                mimetype = headers['Content-type'] = 'application/json'
-        if mimetype == 'application/json':
-            body = json.dumps(body)
+        # breakpoint()
+        # if mimetype is None:
+        #     if isinstance(body, str):
+        #         mimetype = headers['Content-type'] = 'text/plain'
+        #     else:
+        #         mimetype = headers['Content-type'] = 'application/json'
+        # if mimetype == 'application/json':
+        #     body = json.dumps(body)
     else:
         body = None
 
@@ -145,14 +160,18 @@ def create_request_params(profile):
 def make_auth_header(auth_info):
     ''' Return a one-element dict: "Authorization": <token> '''
     if "module" in auth_info:
-        auth_mod_name = auth_info.get("module", "onauth")
+        auth_mod_name = auth_info["module"]
         if 'sys_paths' in auth_info:
             # this allows for relative paths (eg ".") to be included
             sys.path.extend(str(Path(path).resolve()) for path in auth_info['sys_paths'])
+
+        this_dir = Path(os.path.dirname(__file__)).resolve()
+        sys.path.append(str(this_dir))
+
         auth_module = importlib.import_module(auth_mod_name)
         ahf_name = auth_info.get("auth_header_function", "make_auth_header")
-        make_auth_header = getattr(auth_module, ahf_name)
-        auth_header = make_auth_header(auth_info)
+        make_auth_header_func = getattr(auth_module, ahf_name)
+        auth_header = make_auth_header_func(auth_info)
 
         if auth_info.get('log_token', False):
             log.info(json4(auth_header))
@@ -161,7 +180,12 @@ def make_auth_header(auth_info):
     elif "token_file" in auth_info:
         # token_file should contain a json dict w/keys 'token_type' and 'access_token'
         with open(auth_info['token_file']) as tkn:
-            token_info = json.load(tkn)
+            try:
+                token_info = json.load(tkn)
+            except Exception as e:
+                log.error(f"unable to json-decode {auth_info['token_file']}: {e}")
+                raise
+
             return {"Authorization": F"{token_info['token_type']} {token_info['access_token']}"}
 
     elif "header_file" in auth_info:
@@ -192,12 +216,44 @@ def get_body(profile, mimetype):
             with open(body[1:]) as fyle:
                 body = fyle.read()
 
-        if mimetype.lower() == 'application/json':
-            try:
-                body = json.loads(body)
-            except Exception as e:
-                log.debug(F"Could not convert body to json, leaving as {type(body)} ({type(e)}: {e})")
+    elif not (isinstance(body, dict) or isinstance(body, list)):
+        raise TypeError(type(body))
+        # if mimetype and mimetype.lower() == 'application/json':
+        #     try:
+        #         body = json.loads(body)
+        #     except Exception as e:
+        #         log.debug(F"Could not convert body to json, leaving as {type(body)} ({type(e)}: {e})"
+                # )
+    body = json.dumps(body)
+    if "body-post-process" in profile:
+        body = post_process(profile["body-post-process"], body)
 
+    return body
+
+
+def post_process(fq_func_name, body):
+    ''' '''
+    # import fq_func_name:
+    sys.path.append(os.getcwd())
+
+    parts = fq_func_name.split('.')
+    if len(parts) < 2:
+        log.debug(F"{fq_func_name}: not enough parts")
+        return body
+    mod_name = '.'.join(parts[:-1])
+    func_name = parts[-1]
+    try:
+        mod = importlib.import_module(mod_name)
+        func = getattr(mod, func_name)
+    except (ImportError, AttributeError) as e:
+        log.debug(F"Cannot import {fq_func_name}: caught {type(e)}: {e}")
+        return body
+
+    # apply func:
+    try:
+        body = func(body)
+    except Exception as e:
+        log.debug(F"Error running {fq_func_name}(body): caught {type(e)}: {e}")
     return body
 
 
@@ -216,6 +272,11 @@ def as_curl(req_params):
 
 
 def make_auth_request(auth_info):
+    '''
+    Get a token by requesting one from an outside source.
+    All request params must be in auth_info['request']
+    Checks cache if asked;
+    '''
     req_params = auth_info['request']
 
     # check for previously cached result
@@ -248,6 +309,7 @@ def make_auth_request(auth_info):
             log.debug(F"cached token info to {auth_info['cache_path']}")
 
     return {"Authorization": "Bearer " + token['access_token']}
+
 
 def default_error_handler(profile, response, exc):
     url = response.request.url if response else profile['url']

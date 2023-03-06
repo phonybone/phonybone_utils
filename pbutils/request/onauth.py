@@ -1,7 +1,7 @@
 import datetime as dt
 import json
-import requests
 from pbutils.jwt_util import create_jwt_token
+from pbutils.request.utils import make_auth_request
 
 
 def make_auth_header(profile):
@@ -19,6 +19,7 @@ def make_auth_header(profile):
 
 
 def make_onroute_auth_header(auth_info):
+    ''' Make an auth token for Onroute '''
     content = dict(
         email=auth_info['email'],
         account=auth_info['account'],
@@ -26,7 +27,11 @@ def make_onroute_auth_header(auth_info):
         sub="access"            # according to onroute-api/app/core/config.py
     )
     expires = dt.timedelta(minutes=60*24*7)
-    token = create_jwt_token(jwt_content=content, secret_key='Zonar!', expires_delta=expires)
+    token = create_jwt_token(
+        jwt_content=content,
+        jwt_subject='whatevs',
+        secret_key='Zonar!',
+        expires_delta=expires)
     return {'Authorization': f'ONROUTE {token}'}
 
 
