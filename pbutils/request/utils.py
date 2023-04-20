@@ -210,6 +210,7 @@ def get_data(profile):
     Not yet supported: files
     Does not do anything with profile['headers']
     '''
+    data = None
     if 'data' in profile:
         data = profile['data']
         if isinstance(data, str) and data.startswith('@'):
