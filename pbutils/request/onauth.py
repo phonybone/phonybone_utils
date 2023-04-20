@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+import subprocess as sp
 from pbutils.jwt_util import create_jwt_token
 from pbutils.request.utils import make_auth_request
 
@@ -14,6 +15,8 @@ def make_auth_header(profile):
         return make_rtb_auth_header(auth_info)
     elif 'request' in auth_info:
         return make_auth_request(auth_info)
+    elif 'gcloud' in auth_info:
+        return make_gcloud_auth_header(auth_info)
     else:
         raise RuntimeError("can't make auth header: missing info")
 
@@ -41,3 +44,15 @@ def make_rtb_auth_header(auth_info):
         access_token = data['access_token']
         token_type = auth_info['token_type']
     return {'Authorization': F"{token_type} {access_token}"}
+
+
+def make_gcloud_auth_header(auth_info):
+    proc = sp.Popen(
+        ['gcloud', 'auth', 'print-identity-token'],
+        stdout=sp.PIPE
+    )
+    timeout = int(auth_info.get('timeout', 5))
+    token, errs = proc.communicate(timeout=timeout)
+    if proc.returncode != 0:
+        raise RuntimeError(F"unable to get id-token: {errs.decode()}")
+    return {'Authorization': F"Bearer {token.decode()}"}
