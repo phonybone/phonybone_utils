@@ -52,7 +52,7 @@ def main(config):
         die(USAGE)
 
     # load environment if provided
-    if hasattr(config, 'env'):
+    if hasattr(config, 'env') and config.env is not None:
         with open(config.env) as env:
             envmt = json.load(env)
         for profile in profiles:
