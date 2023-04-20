@@ -44,21 +44,31 @@ class attrInterface:
         return section_obj
 
 
-def get_config(config_fn, defaults={}, config_type='Raw', def_section='default'):
+def get_config(config_fn, defaults=None, config_type='Raw', def_section='default'):
     '''
     Return a Config object.
     '''
+    if defaults is None:
+        defaults = {}
     with open(config_fn) as f:
-        return get_config_from_data(f.read(), defaults, config_type, def_section)
+        return get_config_from_data(f.read(), config_type, defaults, def_section)
 
 
-def get_config_from_data(config_data, defaults={}, config_type='Raw', def_section='default'):
+def get_config_from_data(config_data,
+                         config_type,
+                         defaults=None,
+                         def_section='default'):
     '''
     Create and initialize a Config object from the given file or filename.
     Throws exceptions on missing file, syntax errors.
 
     Returns a ConfigParser object (subtype determined by config_type param).
+
+    config_data: string contents of config file
+    config_type: Prefix of ConfigParser classname
     '''
+    if defaults is None:
+        defaults = {}
     if config_type == 'Safe' and sys.version_info[0] == 3:
         clsname = 'ConfigParser'
     else:
@@ -101,7 +111,7 @@ def inject_opts(config, opts, create_sections=True):
     for key, value in vars(opts).items():
         try:
             config.set(section, key, value)
-        except TypeError as e:  # happens for non-RawConfigParser
+        except TypeError:  # happens for non-RawConfigParser
             config.set(section, key, str(value))
 
 
