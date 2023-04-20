@@ -19,7 +19,11 @@ def make_auth_header(profile):
 
 
 def make_onroute_auth_header(auth_info):
-    ''' Make an auth token for Onroute '''
+    '''
+    Make an auth token for Onroute
+
+    auth_info is a dict.  Needs to have 'email' and 'account'
+    '''
     content = dict(
         email=auth_info['email'],
         account=auth_info['account'],
@@ -32,6 +36,8 @@ def make_onroute_auth_header(auth_info):
         jwt_subject='whatevs',
         secret_key='Zonar!',
         expires_delta=expires)
+    if isinstance(token, bytes):
+        token = token.decode()
     return {'Authorization': f'ONROUTE {token}'}
 
 
@@ -41,3 +47,11 @@ def make_rtb_auth_header(auth_info):
         access_token = data['access_token']
         token_type = auth_info['token_type']
     return {'Authorization': F"{token_type} {access_token}"}
+
+if __name__ == '__main__':
+    auth_info = {
+        'email': 'dan@testenv.com',
+        'account': 'dbr47_rep1023'
+    }
+    header = make_onroute_auth_header(auth_info)
+    print(json.dumps(header, indent=2))
