@@ -40,22 +40,29 @@ USAGE = f"usage: {os.path.basename(sys.argv[0])} <profiles.json> [--do-async|n-t
 
 def main(config):
     ''' main entry point '''
-    if sys.version_info < (3,7):
-        die("Sorry, you need python 3.7 or better to run this script")
-
     arun_kwargs = {}
     if 'DEBUG' in os.environ or config.debug:
         log.setLevel(logging.DEBUG)
         arun_kwargs['debug'] = True
 
+    # load profiles
     try:
         profiles = get_profiles(profile_fn=config.arg[0])
     except IndexError:
         die(USAGE)
 
+    # load environment if provided
+    if hasattr(config, 'env') and config.env is not None:
+        with open(config.env) as env:
+            envmt = json.load(env)
+        for profile in profiles:
+            profile.setdefault('vars', {}).update(envmt)
+
+    # handle postman-style profiles/environments
     if is_postman(profiles):
         profiles = postman2areq(profiles, config.postman_env)
 
+    # add debug flag if requested
     if 'DEBUG' in os.environ or config.debug:
         for prof in profiles:
             prof['debug'] = True
@@ -107,6 +114,7 @@ def make_parser():
     parser = parser_stub(__doc__)
     parser.add_argument('--do-async', help='run in asyncio mode', action='store_true')
     parser.add_argument('--n-threads', type=int, help='run with N threads')
+    parser.add_argument('--env', help='environment file (.json)')
     parser.add_argument('--postman-env')
     parser.add_argument('--name', dest="names", action='append', help='only process requests that match name (regex)')
     parser.add_argument('arg', nargs='*')
@@ -114,4 +122,7 @@ def make_parser():
 
 
 if __name__ == '__main__':
+    if sys.version_info < (3,7):
+        die("Sorry, you need python 3.7 or better to run this script")
+
     wrap_main(main, make_parser())

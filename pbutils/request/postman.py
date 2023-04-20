@@ -1,4 +1,3 @@
-import re
 import json
 try:
     import demjson
@@ -8,6 +7,7 @@ except ImportError:
 
 
 def is_postman(profiles):
+    ''' are requests in postman format?  return True or False '''
     return isinstance(profiles, list) and \
         len(profiles) == 1 and \
         isinstance(profiles[0], dict) and \

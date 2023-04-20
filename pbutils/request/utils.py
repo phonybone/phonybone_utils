@@ -119,19 +119,7 @@ def create_request_params(profile):
     params = profile.get('params')  # querystring params
     timeout = float(profile.get('timeout', '1000.0'))
 
-    if 'body' in profile:
-        mimetype = headers.get('Content-type') or headers.get('content-type') or headers.get('Content-type')
-        body = get_body(profile, mimetype)
-        # breakpoint()
-        # if mimetype is None:
-        #     if isinstance(body, str):
-        #         mimetype = headers['Content-type'] = 'text/plain'
-        #     else:
-        #         mimetype = headers['Content-type'] = 'application/json'
-        # if mimetype == 'application/json':
-        #     body = json.dumps(body)
-    else:
-        body = None
+    data = get_data(profile)
 
     # add auth header to headers if needed:
     if "auth" in profile:
@@ -148,9 +136,8 @@ def create_request_params(profile):
         req_params['params'] = params
     if headers:
         req_params['headers'] = headers
-    if body:
-        req_params['data'] = body
-
+    if data:
+        req_params['data'] = data
     if 'debug' in profile:
         log.debug(F"request:\n{json4(req_params)}")
     # log.debug(as_curl(req_params))
@@ -158,7 +145,16 @@ def create_request_params(profile):
 
 
 def make_auth_header(auth_info):
-    ''' Return a one-element dict: "Authorization": <token> '''
+    '''
+    Return a one-element dict: "Authorization": <token>
+
+    auth_info contains:
+    - module: execute and return code specified by value (dict)
+    - token_file: value is name of file containing json dict with 'access_token' and 'token_type'
+    - header_file: value is name of file containing json dict with 'Authorization'
+    - header_json: value is dict with header info (should be "header_dict")
+    - request: value contains info to make an HTTP request that returns an Authorization header entry
+    '''
     if "module" in auth_info:
         auth_mod_name = auth_info["module"]
         if 'sys_paths' in auth_info:
@@ -203,43 +199,44 @@ def make_auth_header(auth_info):
         raise RuntimeError("don't know how to make auth header")
 
 
-def get_body(profile, mimetype):
+def get_data(profile):
     '''
-    Get the body, either directly from the profile or read from disk
-    if profile['body'] is a str and starts with '@'.
+    Get the data for a POST/PUT/PATCH request.
+    Supported types:
+    profile['body']: straight text
+    profile['data']: dict
+    # profile['json']: string in JSON format
 
-    Also, attempt to convert body to data if mimetype=='application/json'.
+    Not yet supported: files
+    Does not do anything with profile['headers']
     '''
-    body = profile['body']
-    if isinstance(body, str):
-        if body.startswith('@'):
-            with open(body[1:]) as fyle:
-                body = fyle.read()
+    data = None
+    if 'data' in profile:
+        data = profile['data']
+        if isinstance(data, str) and data.startswith('@'):
+            with open(data[1:]) as fyle:
+                data = fyle.read()
+        else:
+            assert isinstance(data, dict) or isinstance(data, list)
 
-    elif not (isinstance(body, dict) or isinstance(body, list)):
-        raise TypeError(type(body))
-        # if mimetype and mimetype.lower() == 'application/json':
-        #     try:
-        #         body = json.loads(body)
-        #     except Exception as e:
-        #         log.debug(F"Could not convert body to json, leaving as {type(body)} ({type(e)}: {e})"
-                # )
-    body = json.dumps(body)
-    if "body-post-process" in profile:
-        body = post_process(profile["body-post-process"], body)
+    elif 'body' in profile:
+        data = profile.pop('body')  # backwards compatibility
 
-    return body
+    if "data-post-process" in profile:
+        data = post_process(profile["data-post-process"], data)
+        data = data
+    return data
 
 
-def post_process(fq_func_name, body):
-    ''' '''
-    # import fq_func_name:
+def post_process(fq_func_name, data):
+    ''' post-process request data '''
+    # who uses this?
     sys.path.append(os.getcwd())
 
     parts = fq_func_name.split('.')
     if len(parts) < 2:
         log.debug(F"{fq_func_name}: not enough parts")
-        return body
+        return data
     mod_name = '.'.join(parts[:-1])
     func_name = parts[-1]
     try:
@@ -247,14 +244,14 @@ def post_process(fq_func_name, body):
         func = getattr(mod, func_name)
     except (ImportError, AttributeError) as e:
         log.debug(F"Cannot import {fq_func_name}: caught {type(e)}: {e}")
-        return body
+        return data
 
     # apply func:
     try:
-        body = func(body)
+        data = func(data)
     except Exception as e:
-        log.debug(F"Error running {fq_func_name}(body): caught {type(e)}: {e}")
-    return body
+        log.debug(F"Error running {fq_func_name}(data): caught {type(e)}: {e}")
+    return data
 
 
 def as_curl(req_params):
