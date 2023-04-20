@@ -13,6 +13,7 @@ from .streams import warn
 def parser_stub(docstr):
     parser = argparse.ArgumentParser(description=docstr, formatter_class=RawTextHelpFormatter)
     parser.add_argument('--config', default=_get_default_config_fn())
+    parser.add_argument('--config_type', default='Raw')
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose')
     parser.add_argument('-q', '--silent', action='store_true', help='silent mode')
     parser.add_argument('-d', '--debug', action='store_true', help='debugging flag')
@@ -38,18 +39,21 @@ def _assemble_config(opts, default_section_name='default'):
     This builds a config by the following steps:
     1. read config file (as specified in opts, otherwise empty)
     2. inject environment vars as specified by config
-    3. inject opts
+    3. inject (cmd-line) opts
 
     returns a ConfigParserRaw object.
     '''
     if opts.config:
+        config_type = getattr(opts, 'config_type', 'Raw')  # note:
+        # config_type other than "Raw" can be problematic;
+        # doesn't handle type(opts.blah)==list
         try:
-            config = get_config(opts.config, config_type='Raw')
+            config = get_config(opts.config, config_type=config_type)
         except OSError as e:
             if e.errno == 2 and e.filename != _get_default_config_fn():
                 raise
             else:
-                config = get_config_from_data(f'[{default_section_name}]')
+                config = get_config_from_data(f'[{default_section_name}]', config_type)
                 if opts.debug:
                     warn(f'skipping non-existent config file {opts.config}')
 
