@@ -4,7 +4,7 @@ Random string utils.
 
 import re
 import json
-
+from functools import json2
 
 def qw(s, rx=None):
     '''
@@ -92,6 +92,8 @@ class StringEncoder(json.JSONEncoder):
         except Exception:
             return str(obj)
 
+
+json2 = partial(json.dumps, indent=2, cls=StringEncoder)
 
 # PrettyFloat approach from here: https://stackoverflow.com/questions/1447287/format-floats-with-standard-json-module
 def ppjson(data, indent=2, float_prec=2):
