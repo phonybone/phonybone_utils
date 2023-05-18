@@ -4,7 +4,7 @@ Random string utils.
 
 import re
 import json
-from functools import json2
+from functools import partial
 
 def qw(s, rx=None):
     '''
