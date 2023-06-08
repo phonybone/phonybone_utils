@@ -128,11 +128,15 @@ def get_path_value(data, path):
     '''
     root = data
     for elem in path:
-        print(F"trying for {root}.{elem}")
+        breakpoint()
         try:
             root = getattr(root, elem)
-        except AttributeError:
+        except (TypeError, AttributeError):
             root = root[elem]
+        except Exception as e:
+            print(F"{path}, {elem}: caught {type(e)}: {e}")
+            breakpoint()
+            
     return root
 
 
