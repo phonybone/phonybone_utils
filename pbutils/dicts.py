@@ -2,6 +2,7 @@ import json
 from types import SimpleNamespace
 from functools import partial
 
+json2 = partial(json.dumps, indent=2)
 json4 = partial(json.dumps, indent=4)
 
 
@@ -127,7 +128,11 @@ def get_path_value(data, path):
     '''
     root = data
     for elem in path:
-        root = root[elem]
+        print(F"trying for {root}.{elem}")
+        try:
+            root = getattr(root, elem)
+        except AttributeError:
+            root = root[elem]
     return root
 
 
