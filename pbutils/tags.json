@@ -1,0 +1,46 @@
+[
+    {
+	"brand": "honda",
+	"year": 1988,
+	"model": "nt650",
+	"name": "hawk",
+	"engine_cc": 650,
+	"color": "grey"
+    },
+    {
+	"brand": "triumph",
+	"year": 2006,
+	"model": "daytona",
+	"engine_cc": 675,
+	"color": "gold"
+    },
+    {
+	"brand": "suzuki",
+	"year": 2005,
+	"model": "dl650",
+	"name": "vstrom"
+	"engine_cc": 650,
+	"color": "blue"
+    },
+    {
+	"brand": "kawasaki",
+	"year": 2001,
+	"model": "kdx220r",
+	"engine_cc": 220,
+	"color": "green"
+    },
+    {
+	"brand": "ktm",
+	"year": 2004,
+	"model": "525 exc",
+	"engine_cc": 500,
+	"color": "orange"
+    },
+    {
+	"brand": "ktm",
+	"year": 2017,
+	"model": "300 xc-w",
+	"engine_cc": 300,
+	"color": "orange"
+    }
+]
