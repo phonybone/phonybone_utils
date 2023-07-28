@@ -10,6 +10,7 @@ from copy import deepcopy
 from pathlib import Path
 import json
 from urllib.parse import urlencode
+import subprocess as sb
 
 from pbutils.dicts import is_scalar, traverse_json, set_path_value, json4
 from pbutils.request.logs import log
@@ -194,6 +195,18 @@ def make_auth_header(auth_info):
 
     elif "request" in auth_info:
         return make_auth_request(auth_info)
+
+    elif "gcloud" in auth_info:
+        cmd = ['gcloud', 'auth', 'print-identity-token']
+        if "audience" in auth_info:
+            cmd.append('--audiences')  # yes, plural
+            cmd.append(auth_info['audience'])
+        proc = sb.Popen(cmd, stdout=sb.PIPE)
+        cout, cerr = proc.communicate()
+        retcode = proc.wait()
+        if retcode != 0:
+            raise RuntimeError(F"error generating identity token: {cout}")
+        return {"Authorization": F"Bearer {cout.decode().strip()}"}
 
     else:
         raise RuntimeError("don't know how to make auth header")
