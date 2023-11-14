@@ -51,6 +51,7 @@ def make_rtb_auth_header(auth_info):
         token_type = auth_info['token_type']
     return {'Authorization': F"{token_type} {access_token}"}
 
+
 def make_gcloud_auth_header(auth_info):
     proc = sp.Popen(
         ['gcloud', 'auth', 'print-identity-token'],
@@ -61,3 +62,32 @@ def make_gcloud_auth_header(auth_info):
     if proc.returncode != 0:
         raise RuntimeError(F"unable to get id-token: {errs.decode()}")
     return {'Authorization': F"Bearer {token.decode()}"}
+
+
+if __name__ == '__main__':
+    import sys
+    from functools import partial
+    json2 = partial(json.dumps, indent=2)
+    warn = partial(print, file=sys.stderr)
+
+    def die(msg, exit_code=1):
+        warn(msg)
+        sys.exit(exit_code)
+
+    def test_onroute_auth(account, email):
+        resp = make_onroute_auth_header({'email': email, 'account': account})
+        print(F"resp is {json2(resp)}")
+
+    ########################################################################
+    cmds = [key for key, value in locals().items() if callable(value)]
+    usage = F"usage: python onauth.py [{'|'.join(cmds)}]"
+    if len(sys.argv) <= 1:
+        die(usage)
+    cmd = sys.argv[1]
+    args = sys.argv[2:]
+    method = locals().get(cmd)
+    if method is None:
+        die(usage)
+    method(*args)
+
+    

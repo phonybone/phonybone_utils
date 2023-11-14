@@ -138,7 +138,11 @@ def create_request_params(profile):
     if headers:
         req_params['headers'] = headers
     if data:
-        req_params['data'] = data
+        if isinstance(data, (dict, list)) and \
+           headers.get('Content-type', '') == 'application/json':
+            req_params['json'] = data  # was ['data']
+        else:
+            req_params['data'] = data  # try this
     if 'debug' in profile:
         log.debug(F"request:\n{json4(req_params)}")
     # log.debug(as_curl(req_params))
