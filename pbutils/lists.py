@@ -54,6 +54,18 @@ def scale_list(L, max_L):
     return new_L
 
 
+def windows(lst, ws):
+    '''
+    yield all windows of size ws
+    lst: list
+    ws: window size
+    '''
+    i = 0
+    j = len(lst) - ws
+    while i <= j:
+        yield lst[i:i+ws]
+        i += 1
+
 if __name__ == '__main__':
     import sys
 
@@ -87,6 +99,17 @@ if __name__ == '__main__':
         assert first_match(itr, lambda x: x == 34) is None
         assert first_match(itr, lambda x: x == 3, 'fred') == 3
         assert first_match(itr, lambda x: x == 34, 'fred') == 'fred'
+
+    def test_windows():
+        lst = list(range(10))
+        for ws in range(0, 3):
+            for win in windows(lst, ws):
+                print(F"ws={ws}: win={win}")
+            print()
+        for ws in range(8, 10):
+            for win in windows(lst, ws):
+                print(F"ws={ws}: win={win}")
+            print()
 
     f = locals()[sys.argv[1]]
     args = sys.argv[2:]
