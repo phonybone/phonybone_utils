@@ -80,6 +80,8 @@ def make_var_iterator(varname, varinfo):
             return range(start, stop, step)
         elif isinstance(rangeinfo, list):  # implied range() params
             return range(*rangeinfo)
+        elif isinstance(rangeinfo, int):
+            return range(rangeinfo)
         else:
             raise RuntimeError("Don't know how to make an iterator from '{rangeinfo}'")
 
@@ -138,9 +140,11 @@ def create_request_params(profile):
     if headers:
         req_params['headers'] = headers
     if data:
-        if isinstance(data, (dict, list)) and \
-           headers.get('Content-type', '') == 'application/json':
-            req_params['json'] = data  # was ['data']
+        if isinstance(data, (dict, list)):
+            content_type = headers.get('content-type') or headers.get('Content-type') or\
+                headers.get('Content-Type') or headers.get('CONTENT-TYPE') or ''
+            if content_type == 'application/json':
+                req_params['json'] = data  # was ['data']
         else:
             req_params['data'] = data  # try this
     if 'debug' in profile:

@@ -25,8 +25,11 @@ def run_profiles(profiles: List[dict], environ=None):
             for context in all_contexts(profile, environ):
                 pprofile = populate_profile(profile, context)
                 req_params = create_request_params(pprofile)
-                response = session.request(**req_params)
-                yield pprofile, response
+                try:
+                    response = session.request(**req_params)
+                    yield pprofile, response
+                except requests.exceptions.ConnectTimeout:
+                    print(F"{req_params['url']}: timedout")
 
 
 def handle_response(profile, response, config):
