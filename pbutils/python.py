@@ -3,7 +3,7 @@ Utility functions related to general-purpose python.
 '''
 import sys
 import importlib
-import operators as op
+import operator as op
 
 
 def require_python(version, opname=None):
@@ -45,7 +45,7 @@ def lazy(fn):
 
 
 def import_class(fullname):
-    ''' import and return a class based on module.clsname '''
+    ''' import and return a module and class based on module.clsname '''
     modname, clsname = tuple(fullname.rsplit('.', 1))
     mod = importlib.import_module(modname)
     return getattr(mod, clsname)

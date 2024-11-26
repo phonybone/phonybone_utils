@@ -5,6 +5,7 @@ Random string utils.
 import re
 import json
 from functools import partial
+from dataclasses import asdict
 
 def qw(s, rx=None):
     '''
@@ -88,6 +89,12 @@ class StringEncoder(json.JSONEncoder):
         if type(obj) is set:
             return map(str, obj)
         try:
+            return asdict(obj)
+        except:
+            pass
+        # if hasattr(obj, '__dict__'):
+        #     return obj.__dict__
+        try:
             return json.JSONEncoder.default(self, obj)
         except Exception:
             return str(obj)
@@ -130,6 +137,29 @@ def pretty_floats(obj, float_prec):
         return pretty_floats(obj.__dict__, float_prec)
     return str(obj)
 
+
+def str_to_value(value):
+    '''
+    Convert value to a bool, int, float (or leave as string) depending on
+    its inferred type.  If 'value' is not a string, it is returned as is.
+    '''
+    if not isinstance(value, str):
+        return value
+    if value.lower() == 'true':
+        return True
+    if value.lower() == 'false':
+        return False
+    try:
+        return int(value)
+    except:
+        pass
+    try:
+        return float(value)
+    except:
+        pass
+    return value
+
+    
 
 if __name__ == '__main__':
     def test_ppjson():

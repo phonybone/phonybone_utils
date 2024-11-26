@@ -120,7 +120,7 @@ def traverse_json(data, path=None, only_leaves=False):
         raise TypeError(type(data))
 
 
-def get_path_value(data, path):
+def get_path_value(data:dict, path:list[str]):
     '''
     Get the value in data indicated by path.
     path is a list of keys/indexes.
@@ -129,7 +129,8 @@ def get_path_value(data, path):
     root = data
     for elem in path:
         try:
-            root = getattr(root, elem)
+            root = root[elem]
+            # root = getattr(root, elem)
         except (TypeError, AttributeError):
             if isinstance(root, list):
                 elem = int(elem)
