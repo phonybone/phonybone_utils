@@ -159,7 +159,16 @@ def str_to_value(value):
         pass
     return value
 
-    
+def to_snake(s: str):
+    chars = list(s)
+    news = []
+    for c in chars:
+        if c.isupper():
+            news.append('_')
+            news.append(c.lower())
+        else:
+            news.append(c)
+    return ''.join(news)
 
 if __name__ == '__main__':
     def test_ppjson():
