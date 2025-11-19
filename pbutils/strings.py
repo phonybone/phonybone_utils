@@ -164,7 +164,8 @@ def to_snake(s: str):
     news = []
     for c in chars:
         if c.isupper():
-            news.append('_')
+            if len(news) > 0:
+                news.append('_')
             news.append(c.lower())
         else:
             news.append(c)
